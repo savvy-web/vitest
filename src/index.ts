@@ -1,3 +1,34 @@
+/**
+ * Vitest utility functions for automatic project configuration discovery
+ * in pnpm monorepo workspaces.
+ *
+ * @remarks
+ * This package provides two main classes:
+ *
+ * - {@link VitestProject} - Represents a single Vitest project with sensible
+ *   defaults per test kind (unit, e2e, or custom).
+ *
+ * - {@link VitestConfig} - Orchestrates workspace discovery, coverage
+ *   configuration, reporter selection, and callback invocation.
+ *
+ * @example
+ * ```typescript
+ * import { VitestConfig } from "@savvy-web/vitest";
+ *
+ * export default VitestConfig.create(
+ *   ({ projects, coverage, reporters }) => ({
+ *     test: {
+ *       reporters,
+ *       projects: projects.map((p) => p.toConfig()),
+ *       coverage: { provider: "v8", ...coverage },
+ *     },
+ *   }),
+ * );
+ * ```
+ *
+ * @packageDocumentation
+ */
+
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { cpus } from "node:os";
 import { join, relative } from "node:path";
@@ -8,94 +39,148 @@ export type { TestProjectInlineConfiguration } from "vitest/config";
 import { getWorkspaceManagerRoot, getWorkspacePackagePaths } from "workspace-tools";
 
 /**
- * The kind of test a VitestProject represents.
+ * The kind of test a {@link VitestProject} represents.
+ *
+ * @remarks
+ * The built-in factories {@link VitestProject.unit | unit()} and
+ * {@link VitestProject.e2e | e2e()} correspond to the `"unit"` and `"e2e"`
+ * values respectively. The {@link VitestProject.custom | custom()} factory
+ * accepts an arbitrary string that is stored as the kind.
+ *
  * @public
  */
-export type VitestProjectKind = "unit" | "e2e";
+export type VitestProjectKind = "unit" | "e2e" | (string & {});
 
 /**
- * Options for constructing a VitestProject.
+ * Options for constructing a {@link VitestProject}.
+ *
+ * @see {@link VitestProject.unit} for creating unit test projects
+ * @see {@link VitestProject.e2e} for creating e2e test projects
+ * @see {@link VitestProject.custom} for creating custom test projects
+ *
  * @public
  */
 export interface VitestProjectOptions {
-	/** The project name (typically a package name, optionally with `:unit`/`:e2e` suffix). */
+	/**
+	 * The project name, typically a package name optionally suffixed
+	 * with `:unit` or `:e2e` when both kinds exist in the same package.
+	 */
 	name: string;
+
 	/** Glob patterns for test file inclusion. */
 	include: string[];
-	/** The test kind. Defaults to `"unit"`. */
+
+	/**
+	 * The test kind. Defaults to `"unit"`.
+	 * @defaultValue `"unit"`
+	 */
 	kind?: VitestProjectKind;
-	/** Any vitest-native config fields to merge over the defaults. */
+
+	/**
+	 * Vitest-native config fields to merge over the factory defaults.
+	 *
+	 * @remarks
+	 * The {@link VitestProjectOptions.name | name} and
+	 * {@link VitestProjectOptions.include | include} fields always take
+	 * precedence over any values provided in overrides.
+	 *
+	 * @see {@link https://vitest.dev/config/ | Vitest Configuration} for available fields
+	 */
 	overrides?: Partial<TestProjectInlineConfiguration>;
 }
 
 /**
- * Options for VitestConfig.create().
+ * Options for {@link VitestConfig.create}.
+ *
  * @public
  */
 export interface VitestConfigCreateOptions {
-	/** Coverage thresholds applied per-file. Default: 80 for all metrics. */
+	/**
+	 * Coverage thresholds applied per-file.
+	 *
+	 * @remarks
+	 * Any omitted metric defaults to {@link VitestConfig.DEFAULT_THRESHOLD | 80}.
+	 *
+	 * @defaultValue `{ lines: 80, functions: 80, branches: 80, statements: 80 }`
+	 */
 	thresholds?: {
+		/** Minimum line coverage percentage. */
 		lines?: number;
+		/** Minimum function coverage percentage. */
 		functions?: number;
+		/** Minimum branch coverage percentage. */
 		branches?: number;
+		/** Minimum statement coverage percentage. */
 		statements?: number;
 	};
 }
 
 /**
- * Coverage configuration passed to the VitestConfigCallback.
+ * Coverage configuration passed to the {@link VitestConfigCallback}.
+ *
+ * @see {@link VitestConfig.create} for how this is generated
+ *
  * @public
  */
 export interface CoverageConfig {
+	/** Glob patterns for files to include in coverage reporting. */
 	include: string[];
+
+	/** Glob patterns for files to exclude from coverage reporting. */
 	exclude: string[];
+
+	/** Resolved coverage thresholds with all metrics populated. */
 	thresholds: {
+		/** Minimum line coverage percentage. */
 		lines: number;
+		/** Minimum function coverage percentage. */
 		functions: number;
+		/** Minimum branch coverage percentage. */
 		branches: number;
+		/** Minimum statement coverage percentage. */
 		statements: number;
 	};
 }
 
 /**
- * Callback function type for VitestConfig.create() that receives configuration
- * objects and returns a Vitest configuration.
+ * Callback that receives discovered configuration and returns a Vitest config.
  *
- * @param config - Object containing projects, coverage, reporters, and CI flag
- * @returns Vitest user configuration (sync or async)
+ * @param config - Object containing discovered projects, coverage settings,
+ *   reporters array, and CI detection flag
+ * @returns A Vitest user configuration, optionally async
+ *
+ * @see {@link VitestConfig.create} for the entry point that invokes this callback
+ *
  * @public
  */
 export type VitestConfigCallback = (config: {
+	/** Discovered {@link VitestProject} instances for the workspace. */
 	projects: VitestProject[];
+	/** Generated coverage configuration with thresholds. */
 	coverage: CoverageConfig;
+	/** Reporter names based on environment (adds `"github-actions"` in CI). */
 	reporters: string[];
+	/** Whether the current environment is GitHub Actions CI. */
 	isCI: boolean;
 }) => ViteUserConfig | Promise<ViteUserConfig>;
-
-/**
- * @deprecated Use `VitestProject` and `VitestProject.toConfig()` instead.
- * @public
- */
-export interface VitestProjectConfig {
-	extends: true;
-	test: {
-		name: string;
-		include: string[];
-		environment: string;
-	};
-}
-
-const DEFAULT_THRESHOLD = 80;
 
 /**
  * Represents a single Vitest project with sensible defaults per test kind.
  *
  * @remarks
- * Use the static factory methods `unit()`, `e2e()`, or `custom()` to create
- * instances with appropriate default timeouts and concurrency settings.
+ * Instances are created through static factory methods. The private constructor
+ * enforces that all projects are built with validated merge semantics.
+ *
+ * Override merge precedence (highest wins):
+ * 1. `name` and `include` from options (always win)
+ * 2. `overrides.test` fields
+ * 3. Factory defaults for `test`
+ * 4. Top-level: `overrides` rest spreads over factory defaults rest
  *
  * @example
  * ```typescript
+ * import { VitestProject } from "@savvy-web/vitest";
+ *
  * const unitProject = VitestProject.unit({
  *   name: "@savvy-web/my-lib",
  *   include: ["src/**\/*.test.ts"],
@@ -105,7 +190,10 @@ const DEFAULT_THRESHOLD = 80;
  *   name: "@savvy-web/my-lib:e2e",
  *   include: ["test/e2e/**\/*.test.ts"],
  * });
+ *
+ * const config = unitProject.toConfig();
  * ```
+ *
  * @public
  */
 export class VitestProject {
@@ -117,40 +205,44 @@ export class VitestProject {
 		this.#name = options.name;
 		this.#kind = options.kind ?? "unit";
 
-		const overrides = options.overrides ?? {};
-		const overrideTest = overrides.test as Record<string, unknown> | undefined;
+		const { test: defaultTest, ...defaultRest } = defaults;
+		const { test: overrideTest, ...overrideRest } = options.overrides ?? {};
 
-		// Build merged test config: defaults.test < overrides.test < name/include
-		const defaultTest = (defaults.test ?? {}) as Record<string, unknown>;
-		const mergedTest = {
-			...defaultTest,
-			...overrideTest,
-			name: options.name,
-			include: options.include,
-		};
-
-		// Build merged top-level config: defaults < overrides < extends/test
-		const { test: _defaultTest, ...defaultRest } = defaults;
-		const { test: _overrideTest, ...overrideRest } = overrides;
 		this.#config = {
 			extends: true as const,
 			...defaultRest,
 			...overrideRest,
-			test: mergedTest,
+			test: {
+				...defaultTest,
+				...overrideTest,
+				name: options.name,
+				include: options.include,
+			},
 		} as TestProjectInlineConfiguration;
 	}
 
-	/** The project name. */
+	/**
+	 * The project name.
+	 * @see {@link VitestProjectOptions.name}
+	 */
 	get name(): string {
 		return this.#name;
 	}
 
-	/** The test kind (e.g., `"unit"` or `"e2e"`). */
+	/**
+	 * The test kind (e.g., `"unit"`, `"e2e"`, or a custom string).
+	 * @see {@link VitestProjectKind}
+	 */
 	get kind(): VitestProjectKind {
 		return this.#kind;
 	}
 
-	/** Returns the vitest-native `TestProjectInlineConfiguration`. */
+	/**
+	 * Returns the vitest-native inline configuration object.
+	 *
+	 * @returns A {@link https://vitest.dev/config/ | TestProjectInlineConfiguration}
+	 *   with all defaults and overrides merged
+	 */
 	toConfig(): TestProjectInlineConfiguration {
 		return this.#config;
 	}
@@ -158,7 +250,21 @@ export class VitestProject {
 	/**
 	 * Creates a unit test project with sensible defaults.
 	 *
-	 * Defaults: `extends: true`, `environment: "node"`
+	 * @remarks
+	 * Defaults applied: `extends: true`, `environment: "node"`.
+	 *
+	 * @param options - Project options (the `kind` field is forced to `"unit"`)
+	 * @returns A new {@link VitestProject} configured for unit tests
+	 *
+	 * @example
+	 * ```typescript
+	 * import { VitestProject } from "@savvy-web/vitest";
+	 *
+	 * const project = VitestProject.unit({
+	 *   name: "@savvy-web/my-lib",
+	 *   include: ["src/**\/*.test.ts"],
+	 * });
+	 * ```
 	 */
 	static unit(options: VitestProjectOptions): VitestProject {
 		return new VitestProject({ ...options, kind: "unit" }, {
@@ -171,9 +277,23 @@ export class VitestProject {
 	/**
 	 * Creates an e2e test project with sensible defaults.
 	 *
-	 * Defaults: `extends: true`, `environment: "node"`,
+	 * @remarks
+	 * Defaults applied: `extends: true`, `environment: "node"`,
 	 * `testTimeout: 120_000`, `hookTimeout: 60_000`,
-	 * `maxConcurrency: Math.max(1, Math.min(8, Math.floor(cpus().length / 2)))`
+	 * `maxConcurrency: clamp(floor(cpus / 2), 1, 8)`.
+	 *
+	 * @param options - Project options (the `kind` field is forced to `"e2e"`)
+	 * @returns A new {@link VitestProject} configured for e2e tests
+	 *
+	 * @example
+	 * ```typescript
+	 * import { VitestProject } from "@savvy-web/vitest";
+	 *
+	 * const project = VitestProject.e2e({
+	 *   name: "@savvy-web/my-lib:e2e",
+	 *   include: ["test/e2e/**\/*.test.ts"],
+	 * });
+	 * ```
 	 */
 	static e2e(options: VitestProjectOptions): VitestProject {
 		const concurrency = Math.max(1, Math.min(8, Math.floor(cpus().length / 2)));
@@ -190,11 +310,27 @@ export class VitestProject {
 	/**
 	 * Creates a custom test project with no preset defaults beyond `extends: true`.
 	 *
-	 * @param kind - A custom kind string (stored but not used for defaults)
+	 * @remarks
+	 * Use this factory when the built-in `unit()` and `e2e()` presets do not
+	 * match your needs. The `kind` string is stored on the instance but does
+	 * not influence any default configuration.
+	 *
+	 * @param kind - A custom kind string (e.g., `"integration"`, `"smoke"`)
 	 * @param options - Project options
+	 * @returns A new {@link VitestProject} with no preset defaults
+	 *
+	 * @example
+	 * ```typescript
+	 * import { VitestProject } from "@savvy-web/vitest";
+	 *
+	 * const project = VitestProject.custom("integration", {
+	 *   name: "@savvy-web/my-lib:integration",
+	 *   include: ["test/integration/**\/*.test.ts"],
+	 * });
+	 * ```
 	 */
-	static custom(kind: string, options: VitestProjectOptions): VitestProject {
-		return new VitestProject({ ...options, kind: kind as VitestProjectKind }, {});
+	static custom(kind: VitestProjectKind, options: VitestProjectOptions): VitestProject {
+		return new VitestProject({ ...options, kind }, {});
 	}
 }
 
@@ -202,13 +338,20 @@ export class VitestProject {
  * Utility class for generating Vitest configuration in monorepo workspaces.
  *
  * @remarks
- * This class automatically discovers packages in a workspace that contain a `src/` directory
- * and generates appropriate Vitest project configurations. Tests are discovered by filename
- * convention:
- * - `*.test.ts` / `*.spec.ts` → unit tests
- * - `*.e2e.test.ts` / `*.e2e.spec.ts` → e2e tests
+ * This class automatically discovers packages in a workspace that contain a
+ * `src/` directory and generates appropriate {@link VitestProject} configurations.
+ * Tests are discovered by filename convention:
  *
- * It supports both running all tests and targeting specific projects via command line arguments.
+ * | Pattern | Kind |
+ * | --- | --- |
+ * | `*.test.ts` / `*.spec.ts` | unit |
+ * | `*.e2e.test.ts` / `*.e2e.spec.ts` | e2e |
+ *
+ * It supports both running all tests and targeting specific projects via the
+ * `--project` command line argument.
+ *
+ * Results are cached in static properties so that repeated config evaluations
+ * during watch mode or HMR do not re-scan the filesystem.
  *
  * @example
  * ```typescript
@@ -218,16 +361,20 @@ export class VitestProject {
  *   ({ projects, coverage, reporters }) => ({
  *     test: {
  *       reporters,
- *       projects: projects.map(p => p.toConfig()),
+ *       projects: projects.map((p) => p.toConfig()),
  *       coverage: { provider: "v8", ...coverage },
  *     },
  *   }),
  * );
  * ```
+ *
  * @public
  */
-// biome-ignore lint/complexity/noStaticOnlyClass: This class serves as a namespace for related functionality
+// biome-ignore lint/complexity/noStaticOnlyClass: Intentional namespace pattern for related functionality with shared cached state
 export class VitestConfig {
+	/** Default coverage threshold percentage applied when not overridden. */
+	static readonly DEFAULT_THRESHOLD = 80;
+
 	private static cachedProjects: Record<string, string> | null = null;
 	private static cachedVitestProjects: VitestProject[] | null = null;
 
@@ -235,10 +382,13 @@ export class VitestConfig {
 	 * Creates a complete Vitest configuration by discovering workspace projects
 	 * and generating appropriate settings.
 	 *
-	 * @param callback - Function that receives discovered projects, coverage config,
-	 *   reporters, and CI flag, and returns a Vitest config
+	 * @param callback - Receives discovered projects, coverage config,
+	 *   reporters, and CI flag; returns a Vitest config
 	 * @param options - Optional configuration including coverage thresholds
 	 * @returns The Vitest configuration returned by the callback
+	 *
+	 * @see {@link VitestConfigCallback} for the callback signature
+	 * @see {@link VitestConfigCreateOptions} for available options
 	 */
 	static create(
 		callback: VitestConfigCallback,
@@ -246,7 +396,6 @@ export class VitestConfig {
 	): Promise<ViteUserConfig> | ViteUserConfig {
 		const specificProject = VitestConfig.getSpecificProject();
 		const { projects, vitestProjects } = VitestConfig.discoverWorkspaceProjects();
-
 		const coverage = VitestConfig.getCoverageConfig(specificProject, projects, options);
 
 		const isCI = Boolean(process.env.GITHUB_ACTIONS);
@@ -262,37 +411,64 @@ export class VitestConfig {
 
 	/**
 	 * Extracts the specific project name from command line arguments.
-	 * Supports both `--project=value` and `--project value` formats.
+	 *
+	 * @privateRemarks
+	 * Supports both `--project=value` and `--project value` formats to match
+	 * Vitest's own argument parsing behavior.
 	 */
 	private static getSpecificProject(): string | null {
 		const args = process.argv;
 
 		const projectArg = args.find((arg) => arg.startsWith("--project="));
 		if (projectArg) {
-			return projectArg.split("=")[1];
+			return projectArg.split("=")[1] ?? null;
 		}
 
 		const projectIndex = args.indexOf("--project");
 		if (projectIndex !== -1 && projectIndex + 1 < args.length) {
-			return args[projectIndex + 1];
+			return args[projectIndex + 1] ?? null;
 		}
 
 		return null;
 	}
 
+	/**
+	 * Reads the `name` field from a package's `package.json`.
+	 *
+	 * @privateRemarks
+	 * Uses try/catch because the package.json may not exist or may be malformed.
+	 * Returns `null` to signal the caller should skip this package.
+	 */
 	private static getPackageNameFromPath(packagePath: string): string | null {
 		try {
-			const packageJsonPath = join(packagePath, "package.json");
-			const packageJsonContent = readFileSync(packageJsonPath, "utf8");
-			const packageJson = JSON.parse(packageJsonContent);
-			return packageJson.name;
+			const content = readFileSync(join(packagePath, "package.json"), "utf8");
+			return JSON.parse(content).name ?? null;
 		} catch {
 			return null;
 		}
 	}
 
 	/**
+	 * Checks whether a path is an existing directory.
+	 *
+	 * @privateRemarks
+	 * Consolidates the repeated `statSync` + `isDirectory()` + try/catch
+	 * pattern used throughout workspace discovery.
+	 */
+	private static isDirectory(dirPath: string): boolean {
+		try {
+			return statSync(dirPath).isDirectory();
+		} catch {
+			return false;
+		}
+	}
+
+	/**
 	 * Recursively scans a directory for test files and classifies them by kind.
+	 *
+	 * @privateRemarks
+	 * Short-circuits as soon as both unit and e2e files are found, avoiding
+	 * unnecessary filesystem traversal.
 	 */
 	private static scanForTestFiles(dirPath: string): { hasUnit: boolean; hasE2e: boolean } {
 		let hasUnit = false;
@@ -306,31 +482,41 @@ export class VitestConfig {
 					hasUnit = hasUnit || sub.hasUnit;
 					hasE2e = hasE2e || sub.hasE2e;
 				} else if (entry.isFile()) {
-					const name = entry.name;
-					if (/\.e2e\.(test|spec)\.ts$/.test(name)) {
+					if (/\.e2e\.(test|spec)\.ts$/.test(entry.name)) {
 						hasE2e = true;
-					} else if (/\.(test|spec)\.ts$/.test(name)) {
+					} else if (/\.(test|spec)\.ts$/.test(entry.name)) {
 						hasUnit = true;
 					}
 				}
 				if (hasUnit && hasE2e) break;
 			}
 		} catch {
-			// Directory doesn't exist or can't be read
+			// Directory unreadable or does not exist
 		}
 
 		return { hasUnit, hasE2e };
 	}
 
 	/**
+	 * Builds include glob patterns for a given relative path and optional
+	 * test directory.
+	 */
+	private static buildIncludes(srcGlob: string, testGlob: string | null, pattern: string): string[] {
+		const includes = [`${srcGlob}/**/${pattern}`];
+		if (testGlob) {
+			includes.push(`${testGlob}/**/${pattern}`);
+		}
+		return includes;
+	}
+
+	/**
 	 * Discovers all packages in the workspace that contain a `src/` directory
-	 * and generates VitestProject instances based on filename conventions.
+	 * and generates {@link VitestProject} instances based on filename conventions.
 	 *
-	 * Test files are classified by filename pattern:
-	 * - `*.e2e.test.ts` / `*.e2e.spec.ts` → e2e project
-	 * - `*.test.ts` / `*.spec.ts` → unit project
-	 *
-	 * When a package has both kinds, projects are suffixed with `:unit` and `:e2e`.
+	 * @privateRemarks
+	 * When a package has both unit and e2e test files, projects are suffixed
+	 * with `:unit` and `:e2e` to disambiguate. Packages with `src/` but no
+	 * test files still get a unit project entry as a forward-looking placeholder.
 	 */
 	private static discoverWorkspaceProjects(): {
 		projects: Record<string, string>;
@@ -354,28 +540,15 @@ export class VitestConfig {
 			const packageName = VitestConfig.getPackageNameFromPath(pkgPath);
 			if (!packageName) continue;
 
-			// Check if the package has a src/ directory
 			const srcDirPath = join(pkgPath, "src");
-			try {
-				const srcDirStats = statSync(srcDirPath);
-				if (!srcDirStats.isDirectory()) continue;
-			} catch {
-				continue;
-			}
+			if (!VitestConfig.isDirectory(srcDirPath)) continue;
 
-			const relativePath = relative(workspaceRoot, pkgPath);
+			const relativePath = relative(workspaceRoot, pkgPath) || ".";
 			projects[packageName] = relativePath;
 
-			// Check for __test__/ directory
 			const testDirPath = join(pkgPath, "__test__");
-			let hasTestDir = false;
-			try {
-				hasTestDir = statSync(testDirPath).isDirectory();
-			} catch {
-				// No __test__/ directory
-			}
+			const hasTestDir = VitestConfig.isDirectory(testDirPath);
 
-			// Scan for test file kinds
 			const srcScan = VitestConfig.scanForTestFiles(srcDirPath);
 			const testScan = hasTestDir ? VitestConfig.scanForTestFiles(testDirPath) : { hasUnit: false, hasE2e: false };
 
@@ -383,18 +556,15 @@ export class VitestConfig {
 			const hasE2e = srcScan.hasE2e || testScan.hasE2e;
 			const hasBoth = hasUnit && hasE2e;
 
-			// Build include patterns
-			const srcGlob = `${relativePath}/src`;
-			const testGlob = hasTestDir ? `${relativePath}/__test__` : null;
+			const prefix = relativePath === "." ? "" : `${relativePath}/`;
+			const srcGlob = `${prefix}src`;
+			const testGlob = hasTestDir ? `${prefix}__test__` : null;
 
 			if (hasUnit) {
-				const unitIncludes = [`${srcGlob}/**/*.{test,spec}.ts`];
-				if (testGlob) unitIncludes.push(`${testGlob}/**/*.{test,spec}.ts`);
-
 				vitestProjects.push(
 					VitestProject.unit({
 						name: hasBoth ? `${packageName}:unit` : packageName,
-						include: unitIncludes,
+						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.{test,spec}.ts"),
 						overrides: {
 							test: { exclude: ["**/*.e2e.{test,spec}.ts"] },
 						} as Partial<TestProjectInlineConfiguration>,
@@ -403,27 +573,19 @@ export class VitestConfig {
 			}
 
 			if (hasE2e) {
-				const e2eIncludes = [`${srcGlob}/**/*.e2e.{test,spec}.ts`];
-				if (testGlob) e2eIncludes.push(`${testGlob}/**/*.e2e.{test,spec}.ts`);
-
 				vitestProjects.push(
 					VitestProject.e2e({
 						name: hasBoth ? `${packageName}:e2e` : packageName,
-						include: e2eIncludes,
+						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.e2e.{test,spec}.ts"),
 					}),
 				);
 			}
 
-			// If no test files found at all, still create a unit project
-			// (the package has src/ but maybe tests will be added later)
 			if (!hasUnit && !hasE2e) {
-				const includes = [`${srcGlob}/**/*.{test,spec}.ts`];
-				if (testGlob) includes.push(`${testGlob}/**/*.{test,spec}.ts`);
-
 				vitestProjects.push(
 					VitestProject.unit({
 						name: packageName,
-						include: includes,
+						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.{test,spec}.ts"),
 					}),
 				);
 			}
@@ -438,8 +600,10 @@ export class VitestConfig {
 	/**
 	 * Generates coverage configuration including thresholds.
 	 *
+	 * @privateRemarks
 	 * Strips `:unit`/`:e2e` suffix when looking up project paths for
-	 * `--project` filtering.
+	 * `--project` filtering, since coverage applies to the entire package
+	 * regardless of test kind.
 	 */
 	private static getCoverageConfig(
 		specificProject: string | null,
@@ -447,29 +611,33 @@ export class VitestConfig {
 		options?: VitestConfigCreateOptions,
 	): CoverageConfig {
 		const exclude = ["**/*.{test,spec}.ts"];
+		const t = VitestConfig.DEFAULT_THRESHOLD;
 		const thresholds = {
-			lines: options?.thresholds?.lines ?? DEFAULT_THRESHOLD,
-			functions: options?.thresholds?.functions ?? DEFAULT_THRESHOLD,
-			branches: options?.thresholds?.branches ?? DEFAULT_THRESHOLD,
-			statements: options?.thresholds?.statements ?? DEFAULT_THRESHOLD,
+			lines: options?.thresholds?.lines ?? t,
+			functions: options?.thresholds?.functions ?? t,
+			branches: options?.thresholds?.branches ?? t,
+			statements: options?.thresholds?.statements ?? t,
+		};
+
+		const toSrcGlob = (relPath: string): string => {
+			const prefix = relPath === "." ? "" : `${relPath}/`;
+			return `${prefix}src/**/*.ts`;
 		};
 
 		if (specificProject) {
-			// Strip :unit or :e2e suffix for project lookup
 			const baseName = specificProject.replace(/:(unit|e2e)$/, "");
-			if (baseName in projects) {
-				const relPath = projects[baseName];
+			const relPath = projects[baseName];
+			if (relPath !== undefined) {
 				return {
-					include: [`${relPath}/src/**/*.ts`],
+					include: [toSrcGlob(relPath)],
 					exclude,
 					thresholds,
 				};
 			}
 		}
 
-		const relativePaths = Object.values(projects);
 		return {
-			include: relativePaths.map((relPath) => `${relPath}/src/**/*.ts`),
+			include: Object.values(projects).map(toSrcGlob),
 			exclude,
 			thresholds,
 		};

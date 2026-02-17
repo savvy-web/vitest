@@ -1,5 +1,5 @@
 ---
-status: active
+status: current
 module: vitest
 category: architecture
 created: 2026-02-16
@@ -89,7 +89,7 @@ created through static factory methods.
 **Key interfaces/APIs:**
 
 ```typescript
-export type VitestProjectKind = "unit" | "e2e";
+export type VitestProjectKind = "unit" | "e2e" | (string & {});
 
 export interface VitestProjectOptions {
   name: string;
@@ -102,7 +102,7 @@ export class VitestProject {
   static unit(options: VitestProjectOptions): VitestProject;
   static e2e(options: VitestProjectOptions): VitestProject;
   static custom(
-    kind: string,
+    kind: VitestProjectKind,
     options: VitestProjectOptions,
   ): VitestProject;
 
@@ -136,13 +136,16 @@ coverage configuration, reporter selection, and callback invocation.
 
 **Responsibilities:**
 
-* Parse `--project` from `process.argv`
+* Parse `--project` from `process.argv` with null-safe guards
 * Discover workspace packages via `workspace-tools`
-* Scan `src/` and `__test__/` directories for test files
-* Classify tests as unit or e2e by filename pattern
+* Check for `src/` and `__test__/` directories via the
+  `isDirectory()` helper
+* Scan directories for test files and classify as unit or e2e
+* Build include glob arrays via the `buildIncludes()` helper
 * Generate `VitestProject` instances with appropriate names and
   include globs
-* Build `CoverageConfig` with configurable thresholds (default 80)
+* Build `CoverageConfig` with configurable thresholds
+  (`DEFAULT_THRESHOLD = 80`)
 * Detect `GITHUB_ACTIONS` env for CI reporters
 * Cache results across repeated calls
 
@@ -177,18 +180,47 @@ export type VitestConfigCallback = (config: {
 }) => ViteUserConfig | Promise<ViteUserConfig>;
 ```
 
+**Static constant:**
+
+* `static readonly DEFAULT_THRESHOLD = 80` -- default coverage
+  percentage applied to any threshold metric not explicitly
+  overridden in `VitestConfigCreateOptions`
+
 **Private methods:**
 
 * `getSpecificProject()` -- parses `--project=value` or
-  `--project value` from `process.argv`
-* `getPackageNameFromPath(path)` -- reads `package.json` name field
+  `--project value` from `process.argv`; returns `null` with
+  null-coalescing guards when the value segment is missing
+* `getPackageNameFromPath(path)` -- reads `package.json` name
+  field; returns `null` via `?? null` when the name property is
+  absent or the file is unreadable
+* `isDirectory(dirPath)` -- checks whether a path is an existing
+  directory using `statSync`; consolidates the repeated
+  try/catch + `isDirectory()` pattern
+* `buildIncludes(srcGlob, testGlob, pattern)` -- builds an array
+  of include glob patterns from a `src/` glob and an optional
+  `__test__/` glob, reducing duplication across project creation
+  branches
 * `scanForTestFiles(dirPath)` -- recursive scan returning
   `{ hasUnit, hasE2e }` based on `*.e2e.{test,spec}.ts` vs
-  `*.{test,spec}.ts`
+  `*.{test,spec}.ts`; short-circuits when both kinds are found
 * `discoverWorkspaceProjects()` -- iterates workspace packages,
-  scans `src/` and `__test__/` (if present), creates projects
+  normalizes empty relative paths to `"."` for root-package
+  workspaces, computes a `prefix` that avoids leading-slash
+  globs, uses `isDirectory()` to check for `src/` and
+  `__test__/`, uses `buildIncludes()` to generate globs,
+  creates projects
 * `getCoverageConfig(specificProject, projects, options)` -- strips
-  `:unit`/`:e2e` suffix for `--project` lookup, applies thresholds
+  `:unit`/`:e2e` suffix for `--project` lookup, uses an internal
+  `toSrcGlob()` helper that handles the root-package `"."` case,
+  applies thresholds from `DEFAULT_THRESHOLD`
+
+**Re-exports:**
+
+* `TestProjectInlineConfiguration` from `vitest/config` is
+  re-exported (`export type`) for consumer portability, so
+  downstream packages do not need a direct `vitest` dependency
+  to type their overrides
 
 **Dependencies:**
 
@@ -199,13 +231,6 @@ export type VitestConfigCallback = (config: {
 * `node:path` -- `join`, `relative`
 * `vitest/config` -- `TestProjectInlineConfiguration`,
   `ViteUserConfig`
-
-#### Deprecated: VitestProjectConfig
-
-The `VitestProjectConfig` interface (with `extends`, `test.name`,
-`test.include`, `test.environment`) is still exported but marked
-`@deprecated`. Consumers should use `VitestProject` and call
-`toConfig()` instead.
 
 ### Architecture Diagram
 
@@ -231,30 +256,33 @@ The `VitestProjectConfig` interface (with `extends`, `test.name`,
     |    +----+----+          |
     |    |         |          |
     |    v         v          |
-    | +--+---+ +---+-----+   |
-    | | scan | | classify|   |
-    | | src/ | | unit vs |   |
-    | | and  | | e2e by  |   |
-    | |__test__| filename|   |
-    | +--+---+ +---+-----+   |
-    |    |         |          |
-    |    v         v          |
-    | +--+---------+--+       |
-    | | VitestProject |       |
-    | | .unit()/.e2e()|       |
-    | +-------+-------+       |
-    |         |               |
-    v         v               |
-+---+---------+---+           |
-| getCoverageConfig|          |
-| + thresholds (80)|          |
-+--------+--------+           |
-         |                    |
-         v                    v
-+--------+--------+-----------+--+
-| callback({ projects, coverage,|
-|   reporters, isCI })           |
-+--------+-----------------------+
+    | +--+------+ +---+-----+ |
+    | | isDir() | | classify | |
+    | | scan    | | unit vs  | |
+    | | src/ &  | | e2e by   | |
+    | |__test__ | | filename | |
+    | +--+------+ +---+-----+ |
+    |    |            |        |
+    |    v            v        |
+    | +--+-----+ +---+------+ |
+    | |buildIn-| |VitestProj| |
+    | |cludes()| |.unit()   | |
+    | |  globs | |.e2e()    | |
+    | +--+-----+ |.custom() | |
+    |    |       +---+------+  |
+    |    +----+------+         |
+    |         |                |
+    v         v                |
++---+---------+---+            |
+| getCoverageConfig|           |
+| DEFAULT_THRESHOLD|           |
++--------+--------+            |
+         |                     |
+         v                     v
++--------+--------+------------+--+
+| callback({ projects, coverage, |
+|   reporters, isCI })            |
++--------+------------------------+
          |
          v
     ViteUserConfig
@@ -342,14 +370,16 @@ scanning.
 
 #### Decision 4: VitestProject Class with Factories
 
-**Context:** Replaced the plain `VitestProjectConfig` interface
-with a class that encapsulates merge logic and exposes factories.
+**Context:** A class that encapsulates merge logic and exposes
+kind-specific factories rather than exposing raw configuration
+objects to consumers.
 
 **Options considered:**
 
 1. **Factory class (Chosen):**
    * Pros: encapsulates merge precedence; enforces `name`/`include`
-     immutability; kind-specific defaults in one place
+     immutability; kind-specific defaults in one place; extensible
+     via `custom()` for arbitrary test kinds
    * Cons: more complex than a plain interface
    * Why chosen: merge logic was error-prone when scattered;
      factories (`unit`, `e2e`, `custom`) make intent explicit
@@ -415,7 +445,7 @@ with a class that encapsulates merge logic and exposes factories.
    * Creates `VitestProject.unit()` and/or `.e2e()` instances
    * Adds `:unit`/`:e2e` name suffixes when both kinds exist
 4. `getCoverageConfig()` generates include patterns for all
-   projects with thresholds (default 80)
+   projects with thresholds (`DEFAULT_THRESHOLD = 80`)
 5. Reporters are set: `["default"]` normally,
    `["default", "github-actions"]` when `GITHUB_ACTIONS` is set
 6. `callback` receives `{ projects, coverage, reporters, isCI }`
@@ -495,9 +525,9 @@ interface CoverageConfig {
       v
 [For each package path]
       |
-      +---> [read package.json name]
+      +---> [getPackageNameFromPath() ?? null -> skip]
       |
-      +---> [statSync: has src/ directory?]
+      +---> [isDirectory(src/) ?]
       |          |
       |         no ---> skip
       |          |
@@ -507,7 +537,7 @@ interface CoverageConfig {
       |     [scanForTestFiles(src/)]
       |          |
       |          v
-      |     [statSync: has __test__/?]
+      |     [isDirectory(__test__/) ?]
       |          |
       |     yes: scanForTestFiles(__test__/)
       |          |
@@ -524,6 +554,9 @@ interface CoverageConfig {
       | suffixed    name  name
       |     |         |    |
       |     v         v    v
+      | buildIncludes() -> glob patterns
+      |     |
+      |     v
       | VitestProject.unit() + .e2e()
       |   or .unit() only
       |   or .e2e() only
@@ -533,7 +566,8 @@ interface CoverageConfig {
 [Cache: cachedProjects + cachedVitestProjects]
       |
       v
-[getCoverageConfig: apply --project filter + thresholds]
+[getCoverageConfig: apply --project filter +
+ DEFAULT_THRESHOLD]
       |
       v
 [callback receives { projects, coverage, reporters, isCI }]
@@ -656,8 +690,8 @@ decides the final config shape.
 
 ---
 
-**Document Status:** Active. Reflects the current implementation as
-of 2026-02-17 at 75% completeness. The remaining 25% covers areas
-not yet fully documented: edge-case behavior for malformed
+**Document Status:** Current. Reflects the implementation as of
+2026-02-17 at 75% completeness. The remaining 25% covers areas not
+yet fully documented: edge-case behavior for malformed
 `package.json` files, detailed interaction with Vitest's internal
 project resolution, and workspace-tools fallback paths.
