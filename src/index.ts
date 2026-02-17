@@ -2,6 +2,9 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { cpus } from "node:os";
 import { join, relative } from "node:path";
 import type { TestProjectInlineConfiguration, ViteUserConfig } from "vitest/config";
+
+export type { TestProjectInlineConfiguration } from "vitest/config";
+
 import { getWorkspaceManagerRoot, getWorkspacePackagePaths } from "workspace-tools";
 
 /**
