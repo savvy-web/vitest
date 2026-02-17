@@ -267,11 +267,14 @@ export class VitestProject {
 	 * ```
 	 */
 	static unit(options: VitestProjectOptions): VitestProject {
-		return new VitestProject({ ...options, kind: "unit" }, {
-			test: {
-				environment: "node",
+		return new VitestProject(
+			{ ...options, kind: "unit" },
+			{
+				test: {
+					environment: "node",
+				},
 			},
-		} as Partial<TestProjectInlineConfiguration>);
+		);
 	}
 
 	/**
@@ -297,14 +300,17 @@ export class VitestProject {
 	 */
 	static e2e(options: VitestProjectOptions): VitestProject {
 		const concurrency = Math.max(1, Math.min(8, Math.floor(cpus().length / 2)));
-		return new VitestProject({ ...options, kind: "e2e" }, {
-			test: {
-				environment: "node",
-				testTimeout: 120_000,
-				hookTimeout: 60_000,
-				maxConcurrency: concurrency,
+		return new VitestProject(
+			{ ...options, kind: "e2e" },
+			{
+				test: {
+					environment: "node",
+					testTimeout: 120_000,
+					hookTimeout: 60_000,
+					maxConcurrency: concurrency,
+				},
 			},
-		} as Partial<TestProjectInlineConfiguration>);
+		);
 	}
 
 	/**
@@ -414,7 +420,9 @@ export class VitestConfig {
 	 *
 	 * @privateRemarks
 	 * Supports both `--project=value` and `--project value` formats to match
-	 * Vitest's own argument parsing behavior.
+	 * Vitest's own argument parsing behavior. Only the first `--project` flag
+	 * is returned; repeated flags (e.g. `--project foo --project bar`) are
+	 * ignored since multi-project coverage scoping is not supported.
 	 */
 	private static getSpecificProject(): string | null {
 		const args = process.argv;
@@ -567,7 +575,7 @@ export class VitestConfig {
 						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.{test,spec}.ts"),
 						overrides: {
 							test: { exclude: ["**/*.e2e.{test,spec}.ts"] },
-						} as Partial<TestProjectInlineConfiguration>,
+						},
 					}),
 				);
 			}
@@ -582,6 +590,7 @@ export class VitestConfig {
 			}
 
 			if (!hasUnit && !hasE2e) {
+				// No e2e exclude needed — no e2e files were detected in this package
 				vitestProjects.push(
 					VitestProject.unit({
 						name: packageName,
