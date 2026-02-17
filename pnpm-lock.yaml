@@ -15,9 +15,6 @@ catalogs:
     '@vitest/coverage-v8':
       specifier: ^4.0.18
       version: 4.0.18
-    turbo:
-      specifier: ^2.8.9
-      version: 2.8.9
     typescript:
       specifier: ^5.9.3
       version: 5.9.3
@@ -36,6 +33,19 @@ pnpmfileChecksum: sha256-g6v/ZS+KQlLKQH4DlfG+qUq20r/8uhx+ap2STMVfTek=
 importers:
 
   .:
+    dependencies:
+      '@types/node':
+        specifier: catalog:silk
+        version: 25.2.3
+      '@typescript/native-preview':
+        specifier: catalog:silk
+        version: 7.0.0-dev.20260216.1
+      typescript:
+        specifier: catalog:silk
+        version: 5.9.3
+      workspace-tools:
+        specifier: ^0.41.0
+        version: 0.41.0
     devDependencies:
       '@savvy-web/changesets':
         specifier: ^0.1.1
@@ -49,21 +59,9 @@ importers:
       '@savvy-web/rslib-builder':
         specifier: ^0.14.3
         version: 0.14.3(@microsoft/api-extractor@7.56.3(@types/node@25.2.3))(@pnpm/logger@1001.0.1)(@rslib/core@0.19.6(@microsoft/api-extractor@7.56.3(@types/node@25.2.3))(@typescript/native-preview@7.0.0-dev.20260216.1)(typescript@5.9.3))(@types/node@25.2.3)(@typescript/native-preview@7.0.0-dev.20260216.1)(jiti@2.6.1)(typescript@5.9.3)
-      '@types/node':
-        specifier: catalog:silk
-        version: 25.2.3
-      '@typescript/native-preview':
-        specifier: catalog:silk
-        version: 7.0.0-dev.20260216.1
       '@vitest/coverage-v8':
         specifier: catalog:silk
         version: 4.0.18(vitest@4.0.18(@types/node@25.2.3)(jiti@2.6.1)(yaml@2.8.2))
-      turbo:
-        specifier: catalog:silk
-        version: 2.8.9
-      typescript:
-        specifier: catalog:silk
-        version: 5.9.3
       vitest:
         specifier: catalog:silk
         version: 4.0.18(@types/node@25.2.3)(jiti@2.6.1)(yaml@2.8.2)
