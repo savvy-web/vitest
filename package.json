@@ -44,10 +44,10 @@
 		"workspace-tools": "^0.41.0"
 	},
 	"devDependencies": {
-		"@savvy-web/changesets": "^0.1.1",
-		"@savvy-web/commitlint": "^0.3.3",
-		"@savvy-web/lint-staged": "^0.4.3",
-		"@savvy-web/rslib-builder": "^0.14.3",
+		"@savvy-web/changesets": "^0.1.2",
+		"@savvy-web/commitlint": "^0.3.4",
+		"@savvy-web/lint-staged": "^0.4.6",
+		"@savvy-web/rslib-builder": "^0.14.5",
 		"@vitest/coverage-v8": "catalog:silk",
 		"vitest": "catalog:silk"
 	},
