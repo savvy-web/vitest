@@ -1,5 +1,11 @@
 # @savvy-web/pnpm-module-template
 
+## 0.2.1
+
+### Dependencies
+
+* [`efd3080`](https://github.com/savvy-web/vitest/commit/efd3080af7fbd6beaba6546d7d9bff5ed77bdb7c) @savvy-web/rslib-builder: ^0.15.0 → ^0.16.0
+
 ## 0.2.0
 
 ### Features
