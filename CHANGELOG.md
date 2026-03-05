@@ -1,5 +1,11 @@
 # @savvy-web/pnpm-module-template
 
+## 0.2.0
+
+### Features
+
+* [`58323a1`](https://github.com/savvy-web/vitest/commit/58323a190c015d688062dd0d6bd31e693a707932) Reverts control of peerDependencies to package
+
 ## 0.1.0
 
 ### Features
