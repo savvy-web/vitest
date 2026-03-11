@@ -1,5 +1,15 @@
 # @savvy-web/pnpm-module-template
 
+## 0.2.1
+
+### Dependencies
+
+* [`0c7c4d8`](https://github.com/savvy-web/vitest/commit/0c7c4d879e8184d6633c0a723d18f8867f355f7e) @savvy-web/changesets: ^0.4.1 → ^0.4.2
+* @savvy-web/lint-staged: ^0.5.0 → ^0.5.1
+* @savvy-web/rslib-builder: ^0.16.0 → ^0.17.0
+
+- [`efd3080`](https://github.com/savvy-web/vitest/commit/efd3080af7fbd6beaba6546d7d9bff5ed77bdb7c) @savvy-web/rslib-builder: ^0.15.0 → ^0.16.0
+
 ## 0.2.0
 
 ### Features
