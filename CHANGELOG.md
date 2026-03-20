@@ -1,5 +1,17 @@
 # @savvy-web/pnpm-module-template
 
+## 0.3.0
+
+### Features
+
+* [`293756e`](https://github.com/savvy-web/vitest/commit/293756edf18cd9c02429c96729addf242809294e) Upgades consumers to Vitest 4.1.0+ to support agent mode
+
+### Dependencies
+
+* | [`3b8601a`](https://github.com/savvy-web/vitest/commit/3b8601aaaad4234c3bdde433fe93813a4b4660ec) | Dependency | Type    | Action  | From    | To |
+  | :----------------------------------------------------------------------------------------------- | :--------- | :------ | :------ | :------ | -- |
+  | @savvy-web/rslib-builder                                                                         | dependency | updated | ^0.18.2 | ^0.19.0 |    |
+
 ## 0.2.2
 
 ### Dependencies
