@@ -24,6 +24,7 @@
 		"build:inspect": "rslib inspect --config-loader native --env-mode npm --verbose",
 		"build:prod": "rslib build --config-loader native --env-mode npm",
 		"ci:build": "CI=\"true\" turbo run build:dev build:prod --log-order=grouped --output-logs=full",
+		"ci:test": "vitest run --coverage",
 		"ci:version": "savvy-changesets version && biome format --write .",
 		"commit:check": "savvy-commit check",
 		"commit:init": "savvy-commit init",
