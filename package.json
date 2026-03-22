@@ -44,9 +44,9 @@
 		"workspace-tools": "^0.41.0"
 	},
 	"devDependencies": {
-		"@savvy-web/changesets": "^0.5.3",
-		"@savvy-web/commitlint": "^0.4.2",
-		"@savvy-web/lint-staged": "^0.6.1",
+		"@savvy-web/changesets": "^0.5.4",
+		"@savvy-web/commitlint": "^0.4.3",
+		"@savvy-web/lint-staged": "^0.6.2",
 		"@savvy-web/rslib-builder": "^0.19.0",
 		"@vitest/coverage-v8": "^4.1.0",
 		"vitest": "^4.1.0"
