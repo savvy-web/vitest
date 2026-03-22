@@ -4,6 +4,18 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  silkPeers:
+    '@types/node':
+      specifier: ^25.5.0
+      version: 25.5.0
+    '@typescript/native-preview':
+      specifier: ^7.0.0-dev.20260124.1
+      version: 7.0.0-dev.20260321.1
+    typescript:
+      specifier: ^5.9.3
+      version: 5.9.3
+
 overrides:
   '@isaacs/brace-expansion': ^5.0.1
   lodash: ^4.17.23
@@ -31,13 +43,13 @@ importers:
         version: 0.41.0
     devDependencies:
       '@savvy-web/changesets':
-        specifier: ^0.5.3
+        specifier: ^0.5.4
         version: 0.5.4(@changesets/cli@2.30.0(@types/node@25.5.0))(@effect/cluster@0.58.0(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.75.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.51.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/workflow@0.18.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.75.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(@effect/printer-ansi@0.49.0(@effect/typeclass@0.40.0(effect@3.21.0))(effect@3.21.0))(@effect/printer@0.49.0(@effect/typeclass@0.40.0(effect@3.21.0))(effect@3.21.0))(@effect/rpc@0.75.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.51.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))
       '@savvy-web/commitlint':
-        specifier: ^0.4.2
+        specifier: ^0.4.3
         version: 0.4.3(@commitlint/cli@20.5.0(@types/node@25.5.0)(conventional-commits-parser@6.3.0)(typescript@5.9.3))(@commitlint/config-conventional@20.5.0)(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/typeclass@0.40.0(effect@3.21.0))(@effect/workflow@0.18.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.75.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(husky@9.1.7)
       '@savvy-web/lint-staged':
-        specifier: ^0.6.1
+        specifier: ^0.6.2
         version: 0.6.2(718203b2151a7c09d0c20f2f6055fe14)
       '@savvy-web/rslib-builder':
         specifier: ^0.19.0
