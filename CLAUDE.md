@@ -4,8 +4,9 @@
 
 `@savvy-web/vitest` provides automatic Vitest project configuration
 discovery for pnpm monorepo workspaces. It scans workspace packages,
-classifies test files as unit or e2e by filename convention, and generates
-multi-project Vitest configs with coverage thresholds and CI-aware reporters.
+classifies test files as unit, e2e, or integration by filename convention,
+and generates multi-project Vitest configs with coverage thresholds,
+`vitest-agent-reporter` integration, and CI-aware reporters.
 
 **For workspace discovery architecture details:**
 -> `@./.claude/design/vitest/workspace-discovery-architecture.md`
@@ -21,9 +22,8 @@ coverage configuration, or the VitestProject/VitestConfig class APIs.
 pnpm run lint              # Check code with Biome
 pnpm run lint:fix          # Auto-fix lint issues
 pnpm run typecheck         # Type-check via tsgo
-pnpm run test              # Run all tests
+pnpm run test              # Run all tests (coverage always on)
 pnpm run test:watch        # Run tests in watch mode
-pnpm run test:coverage     # Run tests with coverage report
 ```
 
 ### Building
@@ -51,12 +51,15 @@ pnpm vitest run src/index.test.ts
 
 ### Core System
 
-- **`VitestConfig`**: Static class that discovers workspace packages,
-  classifies test files, generates coverage config with thresholds,
-  and detects CI environment for reporters
-- **`VitestProject`**: Class with `unit()`, `e2e()`, and `custom()`
+- **`VitestConfig`**: Static class with declarative `create(options?)` API
+  that discovers workspace packages, classifies test files (unit/e2e/int),
+  generates coverage config with named presets (`COVERAGE_LEVELS`),
+  injects `AgentPlugin` from `vitest-agent-reporter`, and always enables
+  v8 coverage. Supports per-kind overrides and a `postProcess` escape hatch.
+- **`VitestProject`**: Class with `unit()`, `e2e()`, `int()`, and `custom()`
   factory methods that produce `TestProjectInlineConfiguration` objects
-  with sensible defaults per test kind
+  with sensible defaults per test kind. Mutation methods: `override()`,
+  `addInclude()`, `addExclude()`, `addCoverageExclude()`.
 
 ### Build Pipeline
 

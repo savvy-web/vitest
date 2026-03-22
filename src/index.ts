@@ -15,15 +15,7 @@
  * ```typescript
  * import { VitestConfig } from "@savvy-web/vitest";
  *
- * export default VitestConfig.create(
- *   ({ projects, coverage, reporters }) => ({
- *     test: {
- *       reporters,
- *       projects: projects.map((p) => p.toConfig()),
- *       coverage: { provider: "v8", ...coverage },
- *     },
- *   }),
- * );
+ * export default VitestConfig.create();
  * ```
  *
  * @packageDocumentation
@@ -36,6 +28,7 @@ import type { TestProjectInlineConfiguration, ViteUserConfig } from "vitest/conf
 
 export type { TestProjectInlineConfiguration } from "vitest/config";
 
+import { AgentPlugin } from "vitest-agent-reporter";
 import { getWorkspaceManagerRoot, getWorkspacePackagePaths } from "workspace-tools";
 
 /**
@@ -49,7 +42,7 @@ import { getWorkspaceManagerRoot, getWorkspacePackagePaths } from "workspace-too
  *
  * @public
  */
-export type VitestProjectKind = "unit" | "e2e" | (string & {});
+export type VitestProjectKind = "unit" | "e2e" | "int" | (string & {});
 
 /**
  * Options for constructing a {@link VitestProject}.
@@ -90,39 +83,125 @@ export interface VitestProjectOptions {
 }
 
 /**
+ * Configuration options for the agent reporter plugin.
+ *
+ * @see {@link VitestConfigOptions.agentReporter}
+ *
+ * @public
+ */
+export interface AgentReporterConfig {
+	/** @defaultValue "own" */
+	consoleStrategy?: "own" | "complement";
+	/** @defaultValue 10 */
+	coverageConsoleLimit?: number;
+	/** @defaultValue true */
+	omitPassingTests?: boolean;
+	/** @defaultValue false */
+	includeBareZero?: boolean;
+}
+
+/**
+ * Override for a specific test kind (unit, e2e, int).
+ *
+ * @remarks
+ * When an object is provided, it is merged into every project of that kind.
+ * When a callback is provided, it receives a Map of project name to
+ * {@link VitestProject} for fine-grained per-project mutation.
+ *
+ * @public
+ */
+export type KindOverride =
+	| Partial<TestProjectInlineConfiguration["test"]>
+	| ((projects: Map<string, VitestProject>) => void);
+
+/**
  * Options for {@link VitestConfig.create}.
  *
  * @public
  */
-export interface VitestConfigCreateOptions {
+export interface VitestConfigOptions {
 	/**
-	 * Coverage thresholds applied per-file.
+	 * Coverage level name or explicit thresholds object.
 	 *
 	 * @remarks
-	 * Any omitted metric defaults to {@link VitestConfig.DEFAULT_THRESHOLD | 80}.
+	 * When a {@link CoverageLevelName} string is provided, the corresponding
+	 * preset from {@link VitestConfig.COVERAGE_LEVELS} is used. When a
+	 * {@link CoverageThresholds} object is provided, it is used directly.
 	 *
-	 * @defaultValue `{ lines: 80, functions: 80, branches: 80, statements: 80 }`
+	 * @defaultValue `"strict"` (lines: 80, branches: 75, functions: 80, statements: 80)
 	 */
-	thresholds?: {
-		/** Minimum line coverage percentage. */
-		lines?: number;
-		/** Minimum function coverage percentage. */
-		functions?: number;
-		/** Minimum branch coverage percentage. */
-		branches?: number;
-		/** Minimum statement coverage percentage. */
-		statements?: number;
-	};
+	coverage?: CoverageLevelName | CoverageThresholds;
+
+	/** Additional glob patterns to exclude from coverage reporting. */
+	coverageExclude?: string[];
+
+	/**
+	 * Whether to inject the vitest-agent-reporter plugin.
+	 *
+	 * @remarks
+	 * When `true` or an {@link AgentReporterConfig} object, the plugin is
+	 * injected with the given options. When `false`, the plugin is not injected.
+	 *
+	 * @defaultValue `true`
+	 */
+	agentReporter?: boolean | AgentReporterConfig;
+
+	/**
+	 * Vitest pool mode.
+	 *
+	 * @defaultValue Uses Vitest's default (threads)
+	 */
+	pool?: "threads" | "forks" | "vmThreads" | "vmForks";
+
+	/** Override configuration for all unit test projects. */
+	unit?: KindOverride;
+
+	/** Override configuration for all e2e test projects. */
+	e2e?: KindOverride;
+
+	/** Override configuration for all integration test projects. */
+	int?: KindOverride;
 }
 
 /**
- * Coverage configuration passed to the {@link VitestConfigCallback}.
+ * Post-process callback for escape-hatch customization of the assembled config.
  *
- * @see {@link VitestConfig.create} for how this is generated
+ * @param config - The assembled Vitest configuration
+ * @returns A replacement config, or void to use the mutated original
  *
  * @public
  */
-export interface CoverageConfig {
+export type PostProcessCallback = (config: ViteUserConfig) => ViteUserConfig | undefined;
+
+/**
+ * Coverage thresholds with all four metrics required.
+ *
+ * @public
+ */
+export interface CoverageThresholds {
+	/** Minimum line coverage percentage. */
+	lines: number;
+	/** Minimum function coverage percentage. */
+	functions: number;
+	/** Minimum branch coverage percentage. */
+	branches: number;
+	/** Minimum statement coverage percentage. */
+	statements: number;
+}
+
+/**
+ * Named coverage level presets available on {@link VitestConfig.COVERAGE_LEVELS}.
+ *
+ * @public
+ */
+export type CoverageLevelName = "none" | "basic" | "standard" | "strict" | "full";
+
+/**
+ * Coverage configuration used internally by {@link VitestConfig}.
+ *
+ * @internal
+ */
+interface CoverageConfig {
 	/** Glob patterns for files to include in coverage reporting. */
 	include: string[];
 
@@ -130,39 +209,8 @@ export interface CoverageConfig {
 	exclude: string[];
 
 	/** Resolved coverage thresholds with all metrics populated. */
-	thresholds: {
-		/** Minimum line coverage percentage. */
-		lines: number;
-		/** Minimum function coverage percentage. */
-		functions: number;
-		/** Minimum branch coverage percentage. */
-		branches: number;
-		/** Minimum statement coverage percentage. */
-		statements: number;
-	};
+	thresholds: CoverageThresholds;
 }
-
-/**
- * Callback that receives discovered configuration and returns a Vitest config.
- *
- * @param config - Object containing discovered projects, coverage settings,
- *   reporters array, and CI detection flag
- * @returns A Vitest user configuration, optionally async
- *
- * @see {@link VitestConfig.create} for the entry point that invokes this callback
- *
- * @public
- */
-export type VitestConfigCallback = (config: {
-	/** Discovered {@link VitestProject} instances for the workspace. */
-	projects: VitestProject[];
-	/** Generated coverage configuration with thresholds. */
-	coverage: CoverageConfig;
-	/** Reporter names based on environment (adds `"github-actions"` in CI). */
-	reporters: string[];
-	/** Whether the current environment is GitHub Actions CI. */
-	isCI: boolean;
-}) => ViteUserConfig | Promise<ViteUserConfig>;
 
 /**
  * Represents a single Vitest project with sensible defaults per test kind.
@@ -199,7 +247,8 @@ export type VitestConfigCallback = (config: {
 export class VitestProject {
 	readonly #name: string;
 	readonly #kind: VitestProjectKind;
-	readonly #config: TestProjectInlineConfiguration;
+	#config: TestProjectInlineConfiguration;
+	readonly #coverageExcludes: string[] = [];
 
 	private constructor(options: VitestProjectOptions, defaults: Partial<TestProjectInlineConfiguration>) {
 		this.#name = options.name;
@@ -238,6 +287,17 @@ export class VitestProject {
 	}
 
 	/**
+	 * Coverage exclusion patterns accumulated via {@link addCoverageExclude}.
+	 *
+	 * @remarks
+	 * These patterns are not embedded in the inline project config but are
+	 * made available for the workspace-level coverage configuration to consume.
+	 */
+	get coverageExcludes(): readonly string[] {
+		return this.#coverageExcludes;
+	}
+
+	/**
 	 * Returns the vitest-native inline configuration object.
 	 *
 	 * @returns A {@link https://vitest.dev/config/ | TestProjectInlineConfiguration}
@@ -245,6 +305,98 @@ export class VitestProject {
 	 */
 	toConfig(): TestProjectInlineConfiguration {
 		return this.#config;
+	}
+
+	/**
+	 * Creates a clone of this project with independent config state.
+	 *
+	 * @remarks
+	 * The clone has its own config object so mutations via
+	 * {@link override}, {@link addInclude}, {@link addExclude}, and
+	 * {@link addCoverageExclude} do not affect the original.
+	 *
+	 * @returns A new {@link VitestProject} with the same configuration
+	 */
+	clone(): VitestProject {
+		const { test, ...rest } = this.#config;
+		const cloned = new VitestProject({ name: this.#name, include: test?.include ?? [], kind: this.#kind }, {});
+		cloned.#config = { ...rest, test: test ? { ...test } : undefined } as TestProjectInlineConfiguration;
+		cloned.#coverageExcludes.push(...this.#coverageExcludes);
+		return cloned;
+	}
+
+	/**
+	 * Merges additional configuration over the current config.
+	 *
+	 * @remarks
+	 * The {@link VitestProjectOptions.name | name} and
+	 * {@link VitestProjectOptions.include | include} fields are preserved
+	 * and cannot be overridden.
+	 *
+	 * @param config - Partial configuration to merge
+	 * @returns `this` for chaining
+	 */
+	override(config: Partial<TestProjectInlineConfiguration>): this {
+		const { test: overrideTest, ...overrideRest } = config;
+		const { test: existingTest, ...existingRest } = this.#config;
+
+		this.#config = {
+			...existingRest,
+			...overrideRest,
+			test: {
+				...existingTest,
+				...overrideTest,
+				name: this.#name,
+				include: existingTest?.include,
+			},
+		} as TestProjectInlineConfiguration;
+
+		return this;
+	}
+
+	/**
+	 * Appends glob patterns to the test include list.
+	 *
+	 * @param patterns - Glob patterns to add
+	 * @returns `this` for chaining
+	 */
+	addInclude(...patterns: string[]): this {
+		const { test: existingTest, ...rest } = this.#config;
+		this.#config = {
+			...rest,
+			test: { ...existingTest, include: [...(existingTest?.include ?? []), ...patterns] },
+		} as TestProjectInlineConfiguration;
+		return this;
+	}
+
+	/**
+	 * Appends glob patterns to the test exclude list.
+	 *
+	 * @param patterns - Glob patterns to add
+	 * @returns `this` for chaining
+	 */
+	addExclude(...patterns: string[]): this {
+		const { test: existingTest, ...rest } = this.#config;
+		this.#config = {
+			...rest,
+			test: { ...existingTest, exclude: [...(existingTest?.exclude ?? []), ...patterns] },
+		} as TestProjectInlineConfiguration;
+		return this;
+	}
+
+	/**
+	 * Appends glob patterns to the coverage exclusion list.
+	 *
+	 * @remarks
+	 * These patterns are exposed via {@link coverageExcludes} for the
+	 * workspace-level coverage configuration to consume.
+	 *
+	 * @param patterns - Glob patterns to exclude from coverage
+	 * @returns `this` for chaining
+	 */
+	addCoverageExclude(...patterns: string[]): this {
+		this.#coverageExcludes.push(...patterns);
+		return this;
 	}
 
 	/**
@@ -314,6 +466,42 @@ export class VitestProject {
 	}
 
 	/**
+	 * Creates an integration test project with sensible defaults.
+	 *
+	 * @remarks
+	 * Defaults applied: `extends: true`, `environment: "node"`,
+	 * `testTimeout: 60_000`, `hookTimeout: 30_000`,
+	 * `maxConcurrency: clamp(floor(cpus / 2), 1, 8)`.
+	 *
+	 * @param options - Project options (the `kind` field is forced to `"int"`)
+	 * @returns A new {@link VitestProject} configured for integration tests
+	 *
+	 * @example
+	 * ```typescript
+	 * import { VitestProject } from "@savvy-web/vitest";
+	 *
+	 * const project = VitestProject.int({
+	 *   name: "@savvy-web/my-lib:int",
+	 *   include: ["__test__/integration/**\/*.int.test.ts"],
+	 * });
+	 * ```
+	 */
+	static int(options: VitestProjectOptions): VitestProject {
+		const concurrency = Math.max(1, Math.min(8, Math.floor(cpus().length / 2)));
+		return new VitestProject(
+			{ ...options, kind: "int" },
+			{
+				test: {
+					environment: "node",
+					testTimeout: 60_000,
+					hookTimeout: 30_000,
+					maxConcurrency: concurrency,
+				},
+			},
+		);
+	}
+
+	/**
 	 * Creates a custom test project with no preset defaults beyond `extends: true`.
 	 *
 	 * @remarks
@@ -363,23 +551,42 @@ export class VitestProject {
  * ```typescript
  * import { VitestConfig } from "@savvy-web/vitest";
  *
- * export default VitestConfig.create(
- *   ({ projects, coverage, reporters }) => ({
- *     test: {
- *       reporters,
- *       projects: projects.map((p) => p.toConfig()),
- *       coverage: { provider: "v8", ...coverage },
- *     },
- *   }),
- * );
+ * export default VitestConfig.create();
  * ```
  *
  * @public
  */
 // biome-ignore lint/complexity/noStaticOnlyClass: Intentional namespace pattern for related functionality with shared cached state
 export class VitestConfig {
-	/** Default coverage threshold percentage applied when not overridden. */
-	static readonly DEFAULT_THRESHOLD = 80;
+	/** Default glob patterns excluded from coverage reporting. */
+	private static readonly DEFAULT_COVERAGE_EXCLUDE = [
+		"**/*.{test,spec}.{ts,tsx,js,jsx}",
+		"**/__test__/**",
+		"**/generated/**",
+	];
+
+	/**
+	 * Named coverage level presets.
+	 *
+	 * @remarks
+	 * Use a level name with the `coverage` option in {@link VitestConfig.create}
+	 * to apply a preset. The object is frozen and cannot be mutated.
+	 *
+	 * | Level    | lines | branches | functions | statements |
+	 * | -------- | ----- | -------- | --------- | ---------- |
+	 * | none     | 0     | 0        | 0         | 0          |
+	 * | basic    | 50    | 50       | 50        | 50         |
+	 * | standard | 70    | 65       | 70        | 70         |
+	 * | strict   | 80    | 75       | 80        | 80         |
+	 * | full     | 90    | 85       | 90        | 90         |
+	 */
+	static readonly COVERAGE_LEVELS: Readonly<Record<CoverageLevelName, CoverageThresholds>> = Object.freeze({
+		none: { lines: 0, branches: 0, functions: 0, statements: 0 },
+		basic: { lines: 50, branches: 50, functions: 50, statements: 50 },
+		standard: { lines: 70, branches: 65, functions: 70, statements: 70 },
+		strict: { lines: 80, branches: 75, functions: 80, statements: 80 },
+		full: { lines: 90, branches: 85, functions: 90, statements: 90 },
+	});
 
 	private static cachedProjects: Record<string, string> | null = null;
 	private static cachedVitestProjects: VitestProject[] | null = null;
@@ -388,56 +595,139 @@ export class VitestConfig {
 	 * Creates a complete Vitest configuration by discovering workspace projects
 	 * and generating appropriate settings.
 	 *
-	 * @param callback - Receives discovered projects, coverage config,
-	 *   reporters, and CI flag; returns a Vitest config
-	 * @param options - Optional configuration including coverage thresholds
-	 * @returns The Vitest configuration returned by the callback
+	 * @param options - Optional declarative configuration
+	 * @param postProcess - Optional escape-hatch callback for full config control
+	 * @returns The assembled Vitest configuration
 	 *
-	 * @see {@link VitestConfigCallback} for the callback signature
-	 * @see {@link VitestConfigCreateOptions} for available options
+	 * @see {@link VitestConfigOptions} for available options
+	 * @see {@link PostProcessCallback} for the post-process callback signature
 	 */
-	static create(
-		callback: VitestConfigCallback,
-		options?: VitestConfigCreateOptions,
-	): Promise<ViteUserConfig> | ViteUserConfig {
-		const specificProject = VitestConfig.getSpecificProject();
+	static async create(options?: VitestConfigOptions, postProcess?: PostProcessCallback): Promise<ViteUserConfig> {
+		const specificProjects = VitestConfig.getSpecificProjects();
 		const { projects, vitestProjects } = VitestConfig.discoverWorkspaceProjects();
-		const coverage = VitestConfig.getCoverageConfig(specificProject, projects, options);
+		const thresholds = VitestConfig.resolveThresholds(options);
+		const coverageConfig = VitestConfig.getCoverageConfig(specificProjects, projects, options);
 
+		// Clone cached projects to avoid mutating cached state
+		const workingProjects = vitestProjects.map((p) => p.clone());
+
+		// Apply kind overrides to working copies
+		VitestConfig.applyKindOverrides(workingProjects, options);
+
+		// Build reporters
 		const isCI = Boolean(process.env.GITHUB_ACTIONS);
-		const reporters = isCI ? ["default", "github-actions"] : ["default"];
+		const reporters: string[] = isCI ? ["default", "github-actions"] : ["default"];
 
-		return callback({
-			projects: vitestProjects,
-			coverage,
-			reporters,
-			isCI,
-		});
+		// Assemble config
+		let config: ViteUserConfig = {
+			test: {
+				reporters,
+				projects: workingProjects.map((p) => p.toConfig()),
+				...(options?.pool ? { pool: options.pool } : {}),
+				coverage: {
+					provider: "v8",
+					...coverageConfig,
+					enabled: true,
+				},
+			},
+		};
+
+		// Inject AgentPlugin
+		if (options?.agentReporter !== false) {
+			const coverageThreshold = Math.min(
+				thresholds.lines,
+				thresholds.branches,
+				thresholds.functions,
+				thresholds.statements,
+			);
+
+			const agentOpts = typeof options?.agentReporter === "object" ? options.agentReporter : {};
+
+			const plugin = AgentPlugin({
+				consoleStrategy: agentOpts.consoleStrategy ?? "own",
+				reporter: {
+					coverageThreshold,
+					coverageConsoleLimit: agentOpts.coverageConsoleLimit,
+					omitPassingTests: agentOpts.omitPassingTests,
+					includeBareZero: agentOpts.includeBareZero,
+				},
+			});
+
+			config.plugins = [plugin];
+		}
+
+		// Post-process escape hatch
+		if (postProcess) {
+			const result = postProcess(config);
+			if (result !== undefined) {
+				config = result;
+			}
+		}
+
+		return config;
 	}
 
 	/**
-	 * Extracts the specific project name from command line arguments.
+	 * Applies kind-specific overrides to discovered projects.
+	 *
+	 * @privateRemarks
+	 * When the override is an object, it is merged into every project of the
+	 * matching kind. When it is a callback, it receives a Map of project name
+	 * to {@link VitestProject} for fine-grained per-project mutation.
+	 */
+	private static applyKindOverrides(vitestProjects: VitestProject[], options?: VitestConfigOptions): void {
+		if (!options) return;
+
+		const kindOptions: Record<string, KindOverride | undefined> = {
+			unit: options.unit,
+			e2e: options.e2e,
+			int: options.int,
+		};
+
+		for (const [kind, override] of Object.entries(kindOptions)) {
+			if (override === undefined) continue;
+
+			const projectsOfKind = vitestProjects.filter((p) => p.kind === kind);
+
+			if (typeof override === "function") {
+				const map = new Map<string, VitestProject>();
+				for (const p of projectsOfKind) {
+					map.set(p.name, p);
+				}
+				override(map);
+			} else {
+				for (const p of projectsOfKind) {
+					p.override({ test: override });
+				}
+			}
+		}
+	}
+
+	/**
+	 * Extracts all specific project names from command line arguments.
 	 *
 	 * @privateRemarks
 	 * Supports both `--project=value` and `--project value` formats to match
-	 * Vitest's own argument parsing behavior. Only the first `--project` flag
-	 * is returned; repeated flags (e.g. `--project foo --project bar`) are
-	 * ignored since multi-project coverage scoping is not supported.
+	 * Vitest's own argument parsing behavior. All `--project` flags are
+	 * collected to support multi-project coverage scoping.
 	 */
-	private static getSpecificProject(): string | null {
+	private static getSpecificProjects(): string[] {
 		const args = process.argv;
+		const projects: string[] = [];
 
-		const projectArg = args.find((arg) => arg.startsWith("--project="));
-		if (projectArg) {
-			return projectArg.split("=")[1] ?? null;
+		for (let i = 0; i < args.length; i++) {
+			const arg = args[i];
+			if (arg.startsWith("--project=")) {
+				const value = arg.split("=")[1];
+				if (value) projects.push(value);
+			} else if (arg === "--project" && i + 1 < args.length) {
+				const value = args[i + 1];
+				if (value) projects.push(value);
+				i++; // skip next arg
+			}
 		}
 
-		const projectIndex = args.indexOf("--project");
-		if (projectIndex !== -1 && projectIndex + 1 < args.length) {
-			return args[projectIndex + 1] ?? null;
-		}
-
-		return null;
+		return projects;
 	}
 
 	/**
@@ -471,16 +761,38 @@ export class VitestConfig {
 		}
 	}
 
+	/** Extensions probed (in order) when detecting a setup file. */
+	private static readonly SETUP_FILE_EXTENSIONS = ["ts", "tsx", "js", "jsx"] as const;
+
+	/**
+	 * Detects a `vitest.setup.{ts,tsx,js,jsx}` file at the package root.
+	 *
+	 * @privateRemarks
+	 * First match wins. Returns just the filename (e.g. `"vitest.setup.ts"`)
+	 * so the caller can prepend the relative prefix as needed.
+	 */
+	private static detectSetupFile(packagePath: string): string | null {
+		for (const ext of VitestConfig.SETUP_FILE_EXTENSIONS) {
+			const candidate = join(packagePath, `vitest.setup.${ext}`);
+			try {
+				const stat = statSync(candidate);
+				if (stat.isFile()) return `vitest.setup.${ext}`;
+			} catch {}
+		}
+		return null;
+	}
+
 	/**
 	 * Recursively scans a directory for test files and classifies them by kind.
 	 *
 	 * @privateRemarks
-	 * Short-circuits as soon as both unit and e2e files are found, avoiding
-	 * unnecessary filesystem traversal.
+	 * Short-circuits as soon as all three kinds (unit, e2e, and int) are
+	 * found, avoiding unnecessary filesystem traversal.
 	 */
-	private static scanForTestFiles(dirPath: string): { hasUnit: boolean; hasE2e: boolean } {
+	private static scanForTestFiles(dirPath: string): { hasUnit: boolean; hasE2e: boolean; hasInt: boolean } {
 		let hasUnit = false;
 		let hasE2e = false;
+		let hasInt = false;
 
 		try {
 			const entries = readdirSync(dirPath, { withFileTypes: true });
@@ -489,20 +801,23 @@ export class VitestConfig {
 					const sub = VitestConfig.scanForTestFiles(join(dirPath, entry.name));
 					hasUnit = hasUnit || sub.hasUnit;
 					hasE2e = hasE2e || sub.hasE2e;
+					hasInt = hasInt || sub.hasInt;
 				} else if (entry.isFile()) {
-					if (/\.e2e\.(test|spec)\.ts$/.test(entry.name)) {
+					if (/\.e2e\.(test|spec)\.(ts|tsx|js|jsx)$/.test(entry.name)) {
 						hasE2e = true;
-					} else if (/\.(test|spec)\.ts$/.test(entry.name)) {
+					} else if (/\.int\.(test|spec)\.(ts|tsx|js|jsx)$/.test(entry.name)) {
+						hasInt = true;
+					} else if (/\.(test|spec)\.(ts|tsx|js|jsx)$/.test(entry.name)) {
 						hasUnit = true;
 					}
 				}
-				if (hasUnit && hasE2e) break;
+				if (hasUnit && hasE2e && hasInt) break;
 			}
 		} catch {
 			// Directory unreadable or does not exist
 		}
 
-		return { hasUnit, hasE2e };
+		return { hasUnit, hasE2e, hasInt };
 	}
 
 	/**
@@ -515,6 +830,34 @@ export class VitestConfig {
 			includes.push(`${testGlob}/**/${pattern}`);
 		}
 		return includes;
+	}
+
+	/**
+	 * Conventional subdirectories under `__test__/` that hold helpers, not
+	 * test files, and should be excluded from test discovery.
+	 */
+	private static readonly TEST_DIR_EXCLUSIONS = [
+		"__test__/fixtures/**",
+		"__test__/utils/**",
+		"__test__/unit/fixtures/**",
+		"__test__/unit/utils/**",
+		"__test__/e2e/fixtures/**",
+		"__test__/e2e/utils/**",
+		"__test__/int/fixtures/**",
+		"__test__/int/utils/**",
+		"__test__/integration/fixtures/**",
+		"__test__/integration/utils/**",
+	];
+
+	/**
+	 * Returns exclusion patterns for fixture/utils directories under
+	 * `__test__/`, scoped to the given package prefix.
+	 *
+	 * @param prefix - Either `"<relativePath>/"` for non-root packages or
+	 *   `""` for the workspace root.
+	 */
+	private static buildTestDirExclusions(prefix: string): string[] {
+		return VitestConfig.TEST_DIR_EXCLUSIONS.map((pattern) => `${prefix}${pattern}`);
 	}
 
 	/**
@@ -558,23 +901,35 @@ export class VitestConfig {
 			const hasTestDir = VitestConfig.isDirectory(testDirPath);
 
 			const srcScan = VitestConfig.scanForTestFiles(srcDirPath);
-			const testScan = hasTestDir ? VitestConfig.scanForTestFiles(testDirPath) : { hasUnit: false, hasE2e: false };
+			const testScan = hasTestDir
+				? VitestConfig.scanForTestFiles(testDirPath)
+				: { hasUnit: false, hasE2e: false, hasInt: false };
 
 			const hasUnit = srcScan.hasUnit || testScan.hasUnit;
 			const hasE2e = srcScan.hasE2e || testScan.hasE2e;
-			const hasBoth = hasUnit && hasE2e;
+			const hasInt = srcScan.hasInt || testScan.hasInt;
+			const kindCount = [hasUnit, hasE2e, hasInt].filter(Boolean).length;
+			const shouldSuffix = kindCount >= 2;
 
 			const prefix = relativePath === "." ? "" : `${relativePath}/`;
 			const srcGlob = `${prefix}src`;
 			const testGlob = hasTestDir ? `${prefix}__test__` : null;
 
+			const testDirExcludes = hasTestDir ? VitestConfig.buildTestDirExclusions(prefix) : [];
+
+			const setupFile = VitestConfig.detectSetupFile(pkgPath);
+			const setupFiles = setupFile ? [`${prefix}${setupFile}`] : undefined;
+
 			if (hasUnit) {
 				vitestProjects.push(
 					VitestProject.unit({
-						name: hasBoth ? `${packageName}:unit` : packageName,
-						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.{test,spec}.ts"),
+						name: shouldSuffix ? `${packageName}:unit` : packageName,
+						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.{test,spec}.{ts,tsx,js,jsx}"),
 						overrides: {
-							test: { exclude: ["**/*.e2e.{test,spec}.ts"] },
+							test: {
+								...(setupFiles ? { setupFiles } : {}),
+								exclude: ["**/*.e2e.{test,spec}.*", "**/*.int.{test,spec}.*", ...testDirExcludes],
+							},
 						},
 					}),
 				);
@@ -583,18 +938,45 @@ export class VitestConfig {
 			if (hasE2e) {
 				vitestProjects.push(
 					VitestProject.e2e({
-						name: hasBoth ? `${packageName}:e2e` : packageName,
-						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.e2e.{test,spec}.ts"),
+						name: shouldSuffix ? `${packageName}:e2e` : packageName,
+						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.e2e.{test,spec}.{ts,tsx,js,jsx}"),
+						overrides: {
+							test: {
+								...(setupFiles ? { setupFiles } : {}),
+								exclude: [...testDirExcludes],
+							},
+						},
 					}),
 				);
 			}
 
-			if (!hasUnit && !hasE2e) {
-				// No e2e exclude needed — no e2e files were detected in this package
+			if (hasInt) {
+				vitestProjects.push(
+					VitestProject.int({
+						name: shouldSuffix ? `${packageName}:int` : packageName,
+						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.int.{test,spec}.{ts,tsx,js,jsx}"),
+						overrides: {
+							test: {
+								...(setupFiles ? { setupFiles } : {}),
+								exclude: [...testDirExcludes],
+							},
+						},
+					}),
+				);
+			}
+
+			if (!hasUnit && !hasE2e && !hasInt) {
+				// No test files detected — create a forward-looking placeholder
 				vitestProjects.push(
 					VitestProject.unit({
 						name: packageName,
-						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.{test,spec}.ts"),
+						include: VitestConfig.buildIncludes(srcGlob, testGlob, "*.{test,spec}.{ts,tsx,js,jsx}"),
+						overrides: {
+							test: {
+								...(setupFiles ? { setupFiles } : {}),
+								exclude: [...testDirExcludes],
+							},
+						},
 					}),
 				);
 			}
@@ -607,41 +989,54 @@ export class VitestConfig {
 	}
 
 	/**
+	 * Resolves coverage thresholds from options.
+	 *
+	 * @privateRemarks
+	 * Priority: `options.coverage` (name or object) \> `COVERAGE_LEVELS.strict`.
+	 */
+	private static resolveThresholds(options?: VitestConfigOptions): CoverageThresholds {
+		if (options?.coverage === undefined) {
+			return { ...VitestConfig.COVERAGE_LEVELS.strict };
+		}
+		if (typeof options.coverage === "string") {
+			return { ...VitestConfig.COVERAGE_LEVELS[options.coverage] };
+		}
+		return { ...options.coverage };
+	}
+
+	/**
 	 * Generates coverage configuration including thresholds.
 	 *
 	 * @privateRemarks
-	 * Strips `:unit`/`:e2e` suffix when looking up project paths for
+	 * Strips `:unit`/`:e2e`/`:int` suffix when looking up project paths for
 	 * `--project` filtering, since coverage applies to the entire package
-	 * regardless of test kind.
+	 * regardless of test kind. When multiple `--project` flags are provided,
+	 * coverage includes are unioned across all matched packages.
 	 */
 	private static getCoverageConfig(
-		specificProject: string | null,
+		specificProjects: string[],
 		projects: Record<string, string>,
-		options?: VitestConfigCreateOptions,
+		options?: VitestConfigOptions,
 	): CoverageConfig {
-		const exclude = ["**/*.{test,spec}.ts"];
-		const t = VitestConfig.DEFAULT_THRESHOLD;
-		const thresholds = {
-			lines: options?.thresholds?.lines ?? t,
-			functions: options?.thresholds?.functions ?? t,
-			branches: options?.thresholds?.branches ?? t,
-			statements: options?.thresholds?.statements ?? t,
-		};
+		const exclude = [...VitestConfig.DEFAULT_COVERAGE_EXCLUDE, ...(options?.coverageExclude ?? [])];
+		const thresholds = VitestConfig.resolveThresholds(options);
 
 		const toSrcGlob = (relPath: string): string => {
 			const prefix = relPath === "." ? "" : `${relPath}/`;
 			return `${prefix}src/**/*.ts`;
 		};
 
-		if (specificProject) {
-			const baseName = specificProject.replace(/:(unit|e2e)$/, "");
-			const relPath = projects[baseName];
-			if (relPath !== undefined) {
-				return {
-					include: [toSrcGlob(relPath)],
-					exclude,
-					thresholds,
-				};
+		if (specificProjects.length > 0) {
+			const includes: string[] = [];
+			for (const sp of specificProjects) {
+				const baseName = sp.replace(/:(unit|e2e|int)$/, "");
+				const relPath = projects[baseName];
+				if (relPath !== undefined) {
+					includes.push(toSrcGlob(relPath));
+				}
+			}
+			if (includes.length > 0) {
+				return { include: includes, exclude, thresholds };
 			}
 		}
 

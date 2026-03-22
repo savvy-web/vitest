@@ -2,11 +2,95 @@
 
 Complete reference for every public export of `@savvy-web/vitest`.
 
+## VitestConfig
+
+Static utility class that orchestrates workspace discovery, coverage
+configuration, reporter selection, and agent reporter injection.
+Results are cached in static properties so that repeated config
+evaluations during watch mode or HMR do not re-scan the filesystem.
+
+### `VitestConfig.create()`
+
+```typescript
+static async create(
+  options?: VitestConfigOptions,
+  postProcess?: PostProcessCallback,
+): Promise<ViteUserConfig>
+```
+
+Entry point for automatic workspace discovery and configuration
+assembly. Returns a complete `ViteUserConfig` ready to export from
+`vitest.config.ts`.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `options` | `VitestConfigOptions` | no | Declarative configuration options |
+| `postProcess` | `PostProcessCallback` | no | Escape-hatch callback for full config control |
+
+**Behavior:**
+
+1. Parses all `--project` flags from `process.argv` (supports both
+   `--project=value` and `--project value`).
+2. Discovers workspace packages via `workspace-tools`.
+3. Scans each package's `src/` and `__test__/` directories for test
+   files and classifies them as unit, e2e, or integration.
+4. Builds `VitestProject` instances with appropriate names and include
+   globs.
+5. Applies kind-specific overrides from `options.unit`, `options.e2e`,
+   and `options.int`.
+6. Generates coverage configuration with thresholds, include/exclude
+   patterns, and optional per-project coverage excludes.
+7. Detects CI by reading `process.env.GITHUB_ACTIONS` and sets
+   reporters accordingly.
+8. Injects `vitest-agent-reporter` plugin (unless
+   `agentReporter: false`).
+9. Invokes `postProcess` callback if provided.
+10. Returns the assembled config.
+
+```typescript
+import { VitestConfig } from "@savvy-web/vitest";
+
+// Zero config
+export default VitestConfig.create();
+
+// With options
+export default VitestConfig.create({ coverage: "standard" });
+
+// With options and post-processing
+export default VitestConfig.create(
+  { coverage: "standard" },
+  (config) => {
+    config.resolve = { alias: { "@": "/src" } };
+  },
+);
+```
+
+### `VitestConfig.COVERAGE_LEVELS`
+
+```typescript
+static readonly COVERAGE_LEVELS: Readonly<Record<CoverageLevelName, CoverageThresholds>>
+```
+
+Named coverage level presets. The object is frozen and cannot be
+mutated.
+
+| Level | lines | branches | functions | statements |
+| --- | --- | --- | --- | --- |
+| `none` | 0 | 0 | 0 | 0 |
+| `basic` | 50 | 50 | 50 | 50 |
+| `standard` | 70 | 65 | 70 | 70 |
+| `strict` | 80 | 75 | 80 | 80 |
+| `full` | 90 | 85 | 90 | 90 |
+
+---
+
 ## VitestProject
 
 Represents a single Vitest project with sensible defaults per test
-kind. Instances are created exclusively through static factory
-methods; the constructor is private.
+kind. Instances are created through static factory methods; the
+constructor is private.
 
 ### Override Merge Precedence
 
@@ -19,8 +103,7 @@ following precedence applies (highest wins):
 4. Top-level keys: `overrides` rest spreads over factory defaults
 
 Every configuration object produced by `toConfig()` includes
-`extends: true` so that the project inherits the root Vitest
-config.
+`extends: true` so that the project inherits the root Vitest config.
 
 ### Accessors
 
@@ -38,7 +121,19 @@ Returns the project name supplied at construction time.
 get kind(): VitestProjectKind
 ```
 
-Returns the test kind (`"unit"`, `"e2e"`, or a custom string).
+Returns the test kind (`"unit"`, `"e2e"`, `"int"`, or a custom
+string).
+
+#### `coverageExcludes`
+
+```typescript
+get coverageExcludes(): readonly string[]
+```
+
+Returns coverage exclusion patterns accumulated via
+`addCoverageExclude()`. These patterns are not embedded in the inline
+project config but are available for the workspace-level coverage
+configuration to consume.
 
 ### `toConfig()`
 
@@ -46,10 +141,55 @@ Returns the test kind (`"unit"`, `"e2e"`, or a custom string).
 toConfig(): TestProjectInlineConfiguration
 ```
 
-Returns the fully merged Vitest-native inline configuration
-object. The returned shape contains `extends: true`, a `test`
-block with `name`, `include`, and any merged defaults or
-overrides, plus any top-level keys provided through `overrides`.
+Returns the fully merged Vitest-native inline configuration object.
+The returned shape contains `extends: true`, a `test` block with
+`name`, `include`, and any merged defaults or overrides, plus any
+top-level keys provided through `overrides`.
+
+### Mutation Methods (Chainable)
+
+All mutation methods return `this` for chaining.
+
+#### `override(config)`
+
+```typescript
+override(config: Partial<TestProjectInlineConfiguration>): this
+```
+
+Merges additional configuration over the current config. The `name`
+and `include` fields are preserved and cannot be overridden.
+
+```typescript
+project
+  .override({ test: { testTimeout: 300_000 } })
+  .addCoverageExclude("src/generated/**");
+```
+
+#### `addInclude(...patterns)`
+
+```typescript
+addInclude(...patterns: string[]): this
+```
+
+Appends glob patterns to the test include list.
+
+#### `addExclude(...patterns)`
+
+```typescript
+addExclude(...patterns: string[]): this
+```
+
+Appends glob patterns to the test exclude list.
+
+#### `addCoverageExclude(...patterns)`
+
+```typescript
+addCoverageExclude(...patterns: string[]): this
+```
+
+Appends glob patterns to the coverage exclusion list. These are
+exposed via the `coverageExcludes` getter for the workspace-level
+coverage configuration to consume.
 
 ### Factory Methods
 
@@ -59,33 +199,18 @@ overrides, plus any top-level keys provided through `overrides`.
 static unit(options: VitestProjectOptions): VitestProject
 ```
 
-Creates a unit test project. The `kind` field is forced to
-`"unit"` regardless of what `options.kind` contains.
+Creates a unit test project. The `kind` field is forced to `"unit"`.
 
-**Defaults applied:**
-
-| Key | Value |
+| Default | Value |
 | --- | --- |
 | `extends` | `true` |
 | `environment` | `"node"` |
 
 ```typescript
-import { VitestProject } from "@savvy-web/vitest";
-
 const project = VitestProject.unit({
   name: "@savvy-web/my-lib",
   include: ["src/**/*.test.ts"],
 });
-
-console.log(project.toConfig());
-// {
-//   extends: true,
-//   test: {
-//     name: "@savvy-web/my-lib",
-//     include: ["src/**/*.test.ts"],
-//     environment: "node",
-//   },
-// }
 ```
 
 #### `VitestProject.e2e()`
@@ -94,12 +219,10 @@ console.log(project.toConfig());
 static e2e(options: VitestProjectOptions): VitestProject
 ```
 
-Creates an end-to-end test project. The `kind` field is forced
-to `"e2e"`.
+Creates an end-to-end test project. The `kind` field is forced to
+`"e2e"`.
 
-**Defaults applied:**
-
-| Key | Value |
+| Default | Value |
 | --- | --- |
 | `extends` | `true` |
 | `environment` | `"node"` |
@@ -107,19 +230,35 @@ to `"e2e"`.
 | `hookTimeout` | `60_000` (1 minute) |
 | `maxConcurrency` | `clamp(floor(cpus / 2), 1, 8)` |
 
-The `maxConcurrency` value is computed at call time from
-`os.cpus().length`.
-
 ```typescript
-import { VitestProject } from "@savvy-web/vitest";
-
 const project = VitestProject.e2e({
   name: "@savvy-web/my-lib:e2e",
-  include: ["test/e2e/**/*.test.ts"],
+  include: ["__test__/e2e/**/*.e2e.test.ts"],
 });
+```
 
-console.log(project.kind); // "e2e"
-console.log(project.toConfig().test?.testTimeout); // 120000
+#### `VitestProject.int()`
+
+```typescript
+static int(options: VitestProjectOptions): VitestProject
+```
+
+Creates an integration test project. The `kind` field is forced to
+`"int"`.
+
+| Default | Value |
+| --- | --- |
+| `extends` | `true` |
+| `environment` | `"node"` |
+| `testTimeout` | `60_000` (1 minute) |
+| `hookTimeout` | `30_000` (30 seconds) |
+| `maxConcurrency` | `clamp(floor(cpus / 2), 1, 8)` |
+
+```typescript
+const project = VitestProject.int({
+  name: "@savvy-web/my-lib:int",
+  include: ["__test__/integration/**/*.int.test.ts"],
+});
 ```
 
 #### `VitestProject.custom()`
@@ -131,93 +270,69 @@ static custom(
 ): VitestProject
 ```
 
-Creates a project with no preset defaults beyond `extends: true`.
-The `kind` parameter is an arbitrary string stored on the
-instance; it does not influence any default configuration. Use
-this factory when the built-in `unit()` and `e2e()` presets do
-not match your needs.
+Creates a project with no preset defaults beyond `extends: true`. The
+`kind` parameter is an arbitrary string stored on the instance; it
+does not influence any default configuration.
 
 ```typescript
-import { VitestProject } from "@savvy-web/vitest";
-
-const project = VitestProject.custom("integration", {
-  name: "@savvy-web/my-lib:integration",
-  include: ["test/integration/**/*.test.ts"],
+const project = VitestProject.custom("smoke", {
+  name: "@savvy-web/api:smoke",
+  include: ["test/smoke/**/*.test.ts"],
   overrides: {
-    test: { testTimeout: 30_000 },
+    test: { testTimeout: 10_000, retry: 2 },
   },
 });
-
-console.log(project.kind); // "integration"
-console.log(project.toConfig().test?.environment);
-// undefined (no preset)
 ```
 
-## VitestConfig
-
-Static utility class that orchestrates workspace discovery,
-coverage configuration, reporter selection, and callback
-invocation. Results are cached in static properties so that
-repeated config evaluations during watch mode or HMR do not
-re-scan the filesystem.
-
-### Constants
-
-#### `DEFAULT_THRESHOLD`
-
-```typescript
-static readonly DEFAULT_THRESHOLD = 80
-```
-
-Default coverage threshold percentage applied to any metric
-not explicitly overridden in `VitestConfigCreateOptions`.
-
-### `VitestConfig.create()`
-
-```typescript
-static create(
-  callback: VitestConfigCallback,
-  options?: VitestConfigCreateOptions,
-): Promise<ViteUserConfig> | ViteUserConfig
-```
-
-**Parameters:**
-
-- **callback** -- A function that receives discovered projects,
-  coverage settings, reporters, and a CI detection flag. It
-  returns a `ViteUserConfig` (or a `Promise` of one).
-- **options** -- Optional object with coverage threshold
-  overrides.
-
-**Behavior:**
-
-1. Parses `--project` from `process.argv` (supports both
-   `--project=value` and `--project value`).
-2. Discovers workspace packages via `workspace-tools`.
-3. Scans each package's `src/` and `__test__/` directories for
-   test files and classifies them as unit or e2e.
-4. Builds `VitestProject` instances with appropriate names and
-   include globs.
-5. Generates a `CoverageConfig` with thresholds (defaults to 80
-   for any omitted metric).
-6. Detects CI by reading `process.env.GITHUB_ACTIONS`.
-7. Invokes `callback` and returns its result.
-
-```typescript
-import { VitestConfig } from "@savvy-web/vitest";
-
-export default VitestConfig.create(
-  ({ projects, coverage, reporters }) => ({
-    test: {
-      reporters,
-      projects: projects.map((p) => p.toConfig()),
-      coverage: { provider: "v8", ...coverage },
-    },
-  }),
-);
-```
+---
 
 ## Interfaces
+
+### VitestConfigOptions
+
+Options for `VitestConfig.create()`.
+
+```typescript
+interface VitestConfigOptions {
+  coverage?: CoverageLevelName | CoverageThresholds;
+  coverageExclude?: string[];
+  agentReporter?: boolean | AgentReporterConfig;
+  pool?: "threads" | "forks" | "vmThreads" | "vmForks";
+  unit?: KindOverride;
+  e2e?: KindOverride;
+  int?: KindOverride;
+}
+```
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `coverage` | `CoverageLevelName \| CoverageThresholds` | `"strict"` | Coverage level name or explicit thresholds |
+| `coverageExclude` | `string[]` | `[]` | Additional glob patterns excluded from coverage (additive to built-in defaults) |
+| `agentReporter` | `boolean \| AgentReporterConfig` | `true` | Whether to inject the `vitest-agent-reporter` plugin |
+| `pool` | `"threads" \| "forks" \| "vmThreads" \| "vmForks"` | Vitest default | Vitest pool mode |
+| `unit` | `KindOverride` | -- | Override for all unit test projects |
+| `e2e` | `KindOverride` | -- | Override for all e2e test projects |
+| `int` | `KindOverride` | -- | Override for all integration test projects |
+
+### AgentReporterConfig
+
+Configuration options for the `vitest-agent-reporter` plugin.
+
+```typescript
+interface AgentReporterConfig {
+  consoleStrategy?: "own" | "complement";
+  coverageConsoleLimit?: number;
+  omitPassingTests?: boolean;
+  includeBareZero?: boolean;
+}
+```
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `consoleStrategy` | `"own" \| "complement"` | `"own"` | How the reporter handles console output |
+| `coverageConsoleLimit` | `number` | `10` | Maximum coverage entries to show in console |
+| `omitPassingTests` | `boolean` | `true` | Whether to omit passing tests from output |
+| `includeBareZero` | `boolean` | `false` | Whether to include files with zero coverage |
 
 ### VitestProjectOptions
 
@@ -234,83 +349,68 @@ interface VitestProjectOptions {
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `name` | `string` | yes | Project name, optionally suffixed with `:unit` or `:e2e` |
+| `name` | `string` | yes | Project name, optionally suffixed with `:unit`, `:e2e`, or `:int` |
 | `include` | `string[]` | yes | Glob patterns for test file inclusion |
 | `kind` | `VitestProjectKind` | no | Test kind (default `"unit"`). Overridden by factory methods. |
 | `overrides` | `Partial<TestProjectInlineConfiguration>` | no | Vitest-native config fields merged over factory defaults |
 
-### VitestConfigCreateOptions
+### CoverageThresholds
 
-Options for `VitestConfig.create()`.
+Coverage thresholds with all four metrics required.
 
 ```typescript
-interface VitestConfigCreateOptions {
-  thresholds?: {
-    lines?: number;
-    functions?: number;
-    branches?: number;
-    statements?: number;
-  };
+interface CoverageThresholds {
+  lines: number;
+  functions: number;
+  branches: number;
+  statements: number;
 }
 ```
 
-Each omitted metric defaults to
-`VitestConfig.DEFAULT_THRESHOLD` (80).
-
-### CoverageConfig
-
-Coverage configuration passed to the `VitestConfigCallback`.
-
-```typescript
-interface CoverageConfig {
-  include: string[];
-  exclude: string[];
-  thresholds: {
-    lines: number;
-    functions: number;
-    branches: number;
-    statements: number;
-  };
-}
-```
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `include` | `string[]` | Glob patterns for files to include in coverage (e.g., `["pkgs/my-lib/src/**/*.ts"]`) |
-| `exclude` | `string[]` | Glob patterns to exclude (always `["**/*.{test,spec}.ts"]`) |
-| `thresholds` | `object` | Resolved thresholds with all four metrics populated |
-
-### VitestConfigCallback
-
-Callback signature for `VitestConfig.create()`.
-
-```typescript
-type VitestConfigCallback = (config: {
-  projects: VitestProject[];
-  coverage: CoverageConfig;
-  reporters: string[];
-  isCI: boolean;
-}) => ViteUserConfig | Promise<ViteUserConfig>;
-```
-
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `projects` | `VitestProject[]` | Discovered project instances |
-| `coverage` | `CoverageConfig` | Generated coverage config with thresholds |
-| `reporters` | `string[]` | Reporter names; adds `"github-actions"` in CI |
-| `isCI` | `boolean` | `true` when `GITHUB_ACTIONS` env var is set |
+---
 
 ## Types
 
 ### VitestProjectKind
 
 ```typescript
-type VitestProjectKind = "unit" | "e2e" | (string & {});
+type VitestProjectKind = "unit" | "e2e" | "int" | (string & {});
 ```
 
-A branded union that accepts the built-in `"unit"` and `"e2e"`
-literals while also permitting any arbitrary string for custom
+A branded union that accepts the built-in `"unit"`, `"e2e"`, and
+`"int"` literals while also permitting any arbitrary string for custom
 test kinds.
+
+### CoverageLevelName
+
+```typescript
+type CoverageLevelName = "none" | "basic" | "standard" | "strict" | "full";
+```
+
+Named coverage level presets available on
+`VitestConfig.COVERAGE_LEVELS`.
+
+### KindOverride
+
+```typescript
+type KindOverride =
+  | Partial<TestProjectInlineConfiguration["test"]>
+  | ((projects: Map<string, VitestProject>) => void);
+```
+
+When an object is provided, it is merged into every project of that
+kind. When a callback is provided, it receives a `Map` of project name
+to `VitestProject` for fine-grained per-project mutation.
+
+### PostProcessCallback
+
+```typescript
+type PostProcessCallback = (config: ViteUserConfig) => ViteUserConfig | undefined;
+```
+
+Escape-hatch callback for full control over the assembled config. If a
+replacement config is returned, it replaces the original. If `void` or
+`undefined` is returned, the (possibly mutated) original is used.
 
 ### TestProjectInlineConfiguration (re-export)
 
@@ -318,7 +418,17 @@ test kinds.
 export type { TestProjectInlineConfiguration } from "vitest/config";
 ```
 
-Re-exported from `vitest/config` for consumer convenience.
-Downstream packages can import this type from
-`@savvy-web/vitest` without adding a direct `vitest` dependency
-to their type imports.
+Re-exported from `vitest/config` for consumer convenience. Downstream
+packages can import this type from `@savvy-web/vitest` without adding
+a direct `vitest` dependency to their type imports.
+
+---
+
+## Default Coverage Excludes
+
+The following patterns are always excluded from coverage reporting,
+before any user-supplied `coverageExclude` patterns are appended:
+
+- `**/*.{test,spec}.{ts,tsx,js,jsx}`
+- `**/__test__/**`
+- `**/generated/**`

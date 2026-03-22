@@ -1,32 +1,22 @@
 # Usage Guides
 
-Practical recipes for configuring Vitest with `@savvy-web/vitest`
-in pnpm monorepo workspaces.
+Practical recipes for configuring Vitest with `@savvy-web/vitest` in
+pnpm monorepo workspaces.
 
-## Basic Auto-Discovery Setup
+## Zero-Config Setup
 
-The simplest configuration scans your entire workspace and
-generates projects, coverage, and reporters automatically.
-
-Create a `vitest.config.ts` at the workspace root:
+The simplest configuration discovers your entire workspace
+automatically. Create a `vitest.config.ts` at the workspace root:
 
 ```typescript
 import { VitestConfig } from "@savvy-web/vitest";
 
-export default VitestConfig.create(
-  ({ projects, coverage, reporters }) => ({
-    test: {
-      reporters,
-      projects: projects.map((p) => p.toConfig()),
-      coverage: { provider: "v8", ...coverage },
-    },
-  }),
-);
+export default VitestConfig.create();
 ```
 
-This single file replaces per-package Vitest configurations.
-Every package with a `src/` directory is automatically discovered
-and classified.
+This single file replaces per-package Vitest configurations. Every
+package with a `src/` directory is automatically discovered and
+classified.
 
 Run all tests:
 
@@ -40,48 +30,152 @@ Run tests for a specific project:
 pnpm vitest run --project=@savvy-web/my-lib
 ```
 
-## Custom Thresholds
+## Coverage Levels
 
-Override the default coverage thresholds (80 for all metrics) by
-passing a `thresholds` object as the second argument:
+Select a named coverage level or provide explicit thresholds:
 
 ```typescript
-import { VitestConfig } from "@savvy-web/vitest";
+// Named level (default is "strict")
+export default VitestConfig.create({ coverage: "standard" });
 
+// Explicit thresholds
+export default VitestConfig.create({
+  coverage: { lines: 95, branches: 90, functions: 95, statements: 95 },
+});
+```
+
+| Level | lines | branches | functions | statements |
+| --- | --- | --- | --- | --- |
+| `none` | 0 | 0 | 0 | 0 |
+| `basic` | 50 | 50 | 50 | 50 |
+| `standard` | 70 | 65 | 70 | 70 |
+| `strict` | 80 | 75 | 80 | 80 |
+| `full` | 90 | 85 | 90 | 90 |
+
+## Additional Coverage Excludes
+
+The `coverageExclude` option is additive to the built-in defaults
+(`**/*.{test,spec}.*`, `**/__test__/**`, `**/generated/**`):
+
+```typescript
+export default VitestConfig.create({
+  coverageExclude: ["src/legacy/**", "src/vendor/**"],
+});
+```
+
+## Per-Kind Overrides (Object Form)
+
+When you pass an object to `unit`, `e2e`, or `int`, it is merged into
+every project of that kind:
+
+```typescript
+export default VitestConfig.create({
+  coverage: "strict",
+  unit: { environment: "jsdom" },
+});
+```
+
+This sets `environment: "jsdom"` on all discovered unit test projects.
+E2E and integration projects are not affected.
+
+## Per-Project Overrides (Callback Form)
+
+When you pass a callback, you receive a `Map<string, VitestProject>`
+for fine-grained per-project mutation:
+
+```typescript
+export default VitestConfig.create({
+  coverage: "strict",
+  e2e: (projects) => {
+    projects.get("@savvy-web/auth:e2e")
+      ?.override({ test: { testTimeout: 300_000 } })
+      .addCoverageExclude("src/generated/**");
+  },
+});
+```
+
+The `VitestProject` mutation methods (`override`, `addInclude`,
+`addExclude`, `addCoverageExclude`) are all chainable.
+
+## Agent Reporter Configuration
+
+By default, `vitest-agent-reporter` is injected automatically. The
+reporter provides AI-friendly test output with coverage summaries.
+
+### Disable the Agent Reporter
+
+```typescript
+export default VitestConfig.create({ agentReporter: false });
+```
+
+### Custom Agent Reporter Options
+
+```typescript
+export default VitestConfig.create({
+  agentReporter: {
+    consoleStrategy: "complement",
+    coverageConsoleLimit: 5,
+    omitPassingTests: true,
+    includeBareZero: false,
+  },
+});
+```
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `consoleStrategy` | `"own"` | How the reporter handles console output |
+| `coverageConsoleLimit` | `10` | Maximum coverage entries shown in console |
+| `omitPassingTests` | `true` | Whether to omit passing tests from output |
+| `includeBareZero` | `false` | Whether to include files with zero coverage |
+
+The reporter's `coverageThreshold` is automatically derived from the
+minimum of the four coverage thresholds.
+
+## Pool Configuration
+
+Set the Vitest pool mode:
+
+```typescript
+export default VitestConfig.create({ pool: "forks" });
+```
+
+Valid values: `"threads"`, `"forks"`, `"vmThreads"`, `"vmForks"`.
+
+## Post-Process Escape Hatch
+
+For Vite-level configuration that falls outside the options API, use
+the `postProcess` callback:
+
+```typescript
 export default VitestConfig.create(
-  ({ projects, coverage, reporters }) => ({
-    test: {
-      reporters,
-      projects: projects.map((p) => p.toConfig()),
-      coverage: { provider: "v8", ...coverage },
-    },
-  }),
-  {
-    thresholds: {
-      lines: 90,
-      functions: 90,
-      branches: 85,
-      statements: 90,
-    },
+  { coverage: "standard" },
+  (config) => {
+    config.resolve = { alias: { "@": "/src" } };
   },
 );
 ```
 
-You can also supply a subset. Any metric you omit defaults to 80:
+The callback receives the fully assembled `ViteUserConfig`. Mutate it
+in place (return `undefined`) or return a replacement object:
 
 ```typescript
-VitestConfig.create(callback, {
-  thresholds: { lines: 95 },
-  // functions: 80, branches: 80, statements: 80
-});
+export default VitestConfig.create(
+  {},
+  (config) => {
+    // Return a replacement config
+    return {
+      ...config,
+      resolve: { alias: { "@": "/src" } },
+    };
+  },
+);
 ```
 
 ## Manual Project Configuration
 
-When you need full control over a project's settings, create
-`VitestProject` instances directly. This is useful for packages
-that do not follow the standard `src/` convention or need custom
-Vite configuration.
+When you need explicit control over a project, use the factory methods
+directly. This is useful for packages that do not follow the standard
+`src/` convention or need custom configuration.
 
 ```typescript
 import { VitestProject } from "@savvy-web/vitest";
@@ -103,132 +197,20 @@ export default {
 };
 ```
 
-The `overrides` field accepts any Vitest-native configuration.
-Top-level keys (like `resolve`) are merged alongside factory
-defaults, while `overrides.test` fields are merged into the
-`test` block. The `name` and `include` options always take
-precedence over anything in `overrides`.
+### Factory Defaults Summary
 
-## Mixed Auto-Discovery and Manual Projects
+| Factory | environment | testTimeout | hookTimeout | maxConcurrency |
+| --- | --- | --- | --- | --- |
+| `unit()` | `"node"` | vitest default | vitest default | vitest default |
+| `int()` | `"node"` | 60,000 | 30,000 | `floor(cpus/2)` clamped 1..8 |
+| `e2e()` | `"node"` | 120,000 | 60,000 | `floor(cpus/2)` clamped 1..8 |
+| `custom(kind)` | none | none | none | none |
 
-Combine discovered projects with manually configured ones by
-appending to the projects array inside the callback:
+## Custom Test Kinds
 
-```typescript
-import { VitestConfig, VitestProject } from "@savvy-web/vitest";
-
-const rslibProject = VitestProject.unit({
-  name: "@savvy-web/rslib-builder:unit",
-  include: ["lib/configs/rslib-builder/src/**/*.test.ts"],
-  overrides: {
-    resolve: {
-      alias: {
-        "@rslib/builder": "/path/to/rslib-builder/src",
-      },
-    },
-  },
-});
-
-export default VitestConfig.create(
-  ({ projects, coverage, reporters }) => ({
-    test: {
-      reporters,
-      projects: [
-        ...projects.map((p) => p.toConfig()),
-        rslibProject.toConfig(),
-      ],
-      coverage: { provider: "v8", ...coverage },
-    },
-  }),
-);
-```
-
-The auto-discovered projects and the manual project coexist in
-the same configuration. Coverage thresholds apply to all of them.
-
-## E2E Project with Custom Resolve Aliases
-
-End-to-end projects often need Vite resolve aliases or longer
-timeouts. The `e2e()` factory sets generous defaults, and you can
-layer additional configuration through `overrides`:
-
-```typescript
-import { VitestProject } from "@savvy-web/vitest";
-
-const e2eProject = VitestProject.e2e({
-  name: "@savvy-web/api-client:e2e",
-  include: ["src/**/*.e2e.test.ts"],
-  overrides: {
-    resolve: {
-      alias: {
-        "@fixtures": "/path/to/test-fixtures",
-      },
-    },
-    test: {
-      testTimeout: 180_000,  // override the 120s default
-      env: {
-        API_URL: "http://localhost:3000",
-      },
-    },
-  },
-});
-```
-
-The `e2e()` factory provides these defaults:
-
-- `testTimeout`: 120,000 ms (2 minutes)
-- `hookTimeout`: 60,000 ms (1 minute)
-- `maxConcurrency`: half the available CPU cores, clamped to 1-8
-- `environment`: `"node"`
-
-Any of these can be overridden individually. Defaults you do not
-override remain in effect.
-
-## CI-Aware Configuration
-
-`VitestConfig.create()` detects GitHub Actions CI automatically
-by reading the `GITHUB_ACTIONS` environment variable. The
-callback receives both `reporters` and `isCI` so you can adjust
-behavior per environment.
-
-### Reporters
-
-- **Local:** `["default"]`
-- **CI:** `["default", "github-actions"]`
-
-The `github-actions` reporter annotates test failures directly in
-pull request diffs.
-
-### Using the `isCI` Flag
-
-```typescript
-import { VitestConfig } from "@savvy-web/vitest";
-
-export default VitestConfig.create(
-  ({ projects, coverage, reporters, isCI }) => ({
-    test: {
-      reporters,
-      projects: projects.map((p) => p.toConfig()),
-      coverage: {
-        provider: "v8",
-        ...coverage,
-        // Only write coverage reports to disk in CI
-        reporter: isCI
-          ? ["text", "lcov", "json-summary"]
-          : ["text"],
-      },
-      // Disable watch mode in CI
-      watch: isCI ? false : undefined,
-    },
-  }),
-);
-```
-
-### Custom Test Kind with `custom()`
-
-When your test suite does not fit the `unit` or `e2e` categories,
-use the `custom()` factory. It applies no preset defaults beyond
-`extends: true`, giving you a blank slate:
+When your test suite does not fit the `unit`, `e2e`, or `int`
+categories, use the `custom()` factory. It applies no preset defaults
+beyond `extends: true`:
 
 ```typescript
 import { VitestProject } from "@savvy-web/vitest";
@@ -245,6 +227,58 @@ const smoke = VitestProject.custom("smoke", {
 });
 ```
 
-The `kind` value (`"smoke"` in this example) is stored on the
-instance and accessible via `project.kind`, but it does not
-influence any configuration defaults.
+## CI-Aware Reporters
+
+`VitestConfig.create()` detects GitHub Actions CI automatically by
+reading the `GITHUB_ACTIONS` environment variable:
+
+- **Local:** `["default"]`
+- **CI:** `["default", "github-actions"]`
+
+The `github-actions` reporter annotates test failures directly in pull
+request diffs. No additional configuration is required.
+
+## Running Specific Projects
+
+Use the `--project` flag to target specific projects. Coverage is
+automatically scoped to the targeted packages:
+
+```bash
+# Run unit tests for one package
+pnpm vitest run --project=@savvy-web/my-lib:unit
+
+# Run multiple projects -- coverage includes both packages
+pnpm vitest run --project=@savvy-web/my-lib:unit --project=@savvy-web/auth:e2e
+```
+
+The `:unit`, `:e2e`, and `:int` suffixes are stripped when resolving
+coverage includes, so coverage is scoped to the entire package
+regardless of which test kind is targeted.
+
+## Complete Configuration Example
+
+A configuration combining multiple features:
+
+```typescript
+import { VitestConfig } from "@savvy-web/vitest";
+
+export default VitestConfig.create(
+  {
+    coverage: "strict",
+    pool: "forks",
+    coverageExclude: ["src/legacy/**"],
+    agentReporter: {
+      consoleStrategy: "complement",
+      coverageConsoleLimit: 5,
+    },
+    unit: { environment: "jsdom" },
+    e2e: (projects) => {
+      projects.get("@savvy-web/auth:e2e")
+        ?.override({ test: { testTimeout: 300_000 } });
+    },
+  },
+  (config) => {
+    config.resolve = { alias: { "@": "/src" } };
+  },
+);
+```
