@@ -24,7 +24,7 @@
 		"build:inspect": "rslib inspect --config-loader native --env-mode npm --verbose",
 		"build:prod": "rslib build --config-loader native --env-mode npm",
 		"ci:build": "CI=\"true\" turbo run build:dev build:prod --log-order=grouped --output-logs=full",
-		"ci:test": "CI=\"true\" vitest run --coverage",
+		"ci:test": "vitest run --coverage",
 		"ci:version": "savvy-changesets version && biome format --write .",
 		"commit:check": "savvy-commit check",
 		"commit:init": "savvy-commit init",
@@ -35,7 +35,6 @@
 		"lint:md:fix": "markdownlint-cli2  --config './lib/configs/.markdownlint-cli2.jsonc' --fix",
 		"prepare": "husky",
 		"test": "vitest run",
-		"test:coverage": "vitest run --coverage",
 		"test:watch": "vitest --watch",
 		"typecheck": "turbo run types:check --log-prefix=none --log-order=grouped",
 		"types:check": "tsgo --noEmit"
@@ -44,19 +43,21 @@
 		"workspace-tools": "^0.41.0"
 	},
 	"devDependencies": {
-		"@savvy-web/changesets": "^0.5.4",
+		"@savvy-web/changesets": "^0.6.0",
 		"@savvy-web/commitlint": "^0.4.3",
 		"@savvy-web/lint-staged": "^0.6.2",
 		"@savvy-web/rslib-builder": "^0.19.0",
-		"@vitest/coverage-v8": "^4.1.0",
-		"vitest": "^4.1.0"
+		"@vitest/coverage-v8": "^4.1.1",
+		"vitest": "^4.1.1",
+		"vitest-agent-reporter": "^1.0.0"
 	},
 	"peerDependencies": {
 		"@types/node": "catalog:silkPeers",
 		"@typescript/native-preview": "catalog:silkPeers",
 		"@vitest/coverage-v8": "^4.1.0",
 		"typescript": "catalog:silkPeers",
-		"vitest": "^4.1.0"
+		"vitest": "^4.1.0",
+		"vitest-agent-reporter": "^1.0.0"
 	},
 	"peerDependenciesMeta": {
 		"@types/node": {
@@ -72,6 +73,9 @@
 			"optional": false
 		},
 		"vitest": {
+			"optional": false
+		},
+		"vitest-agent-reporter": {
 			"optional": false
 		}
 	},
