@@ -1,5 +1,5 @@
 ---
-"@savvy-web/vitest": minor
+"@savvy-web/vitest": major
 ---
 
 ## Breaking Changes
@@ -7,13 +7,19 @@
 Replace callback-based `VitestConfig.create(callback, options?)` with
 declarative `VitestConfig.create(options?, postProcess?)`. Coverage is
 always enabled. `AgentPlugin` from `vitest-agent-reporter` is injected
-by default.
+by default with `strategy: "own"`.
 
 **Removed:** `VitestConfigCallback`, `VitestConfigCreateOptions`,
 `CoverageConfig` (public export), `DEFAULT_THRESHOLD`
 
 **Migration:** Replace callback usage with zero-config `VitestConfig.create()`
 or pass `VitestConfigOptions` for customization.
+
+`AgentReporterConfig` is now a type alias for the upstream
+`AgentPluginOptions` from `vitest-agent-reporter`. All plugin options
+are passed through directly. Coverage thresholds from the resolved
+coverage level are injected as the per-metric `coverageThresholds`
+object automatically.
 
 ## Features
 
@@ -28,10 +34,9 @@ or pass `VitestConfigOptions` for customization.
 - Exclude `fixtures/` and `utils/` dirs at conventional `__test__/` locations
 - Support multiple `--project` flags for scoped coverage
 - Always-on v8 coverage with configurable thresholds
-- `vitest-agent-reporter` integration with `consoleStrategy: "own"` default
 
 ## Dependencies
 
 | Dependency | Type | Action | From | To |
 | :--- | :--- | :--- | :--- | :--- |
-| vitest-agent-reporter | peerDependency | added | — | ^0.2.0 |
+| vitest-agent-reporter | peerDependency | updated | ^0.2.0 | ^1.0.0 |

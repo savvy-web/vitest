@@ -404,14 +404,16 @@ describe("VitestConfig", () => {
 			const result = await VitestConfig.create();
 			expect(result.plugins).toHaveLength(1);
 			expect(mockAgentPlugin).toHaveBeenCalledOnce();
-			expect(mockAgentPlugin).toHaveBeenCalledWith(expect.objectContaining({ consoleStrategy: "own" }));
+			expect(mockAgentPlugin).toHaveBeenCalledWith(expect.objectContaining({ strategy: "own" }));
 		});
 
-		it("should pass coverageThreshold as min of thresholds", async () => {
+		it("should pass full coverageThresholds object", async () => {
 			await VitestConfig.create({ coverage: "standard" });
 			expect(mockAgentPlugin).toHaveBeenCalledWith(
 				expect.objectContaining({
-					reporter: expect.objectContaining({ coverageThreshold: 65 }),
+					reporter: expect.objectContaining({
+						coverageThresholds: { lines: 70, branches: 65, functions: 70, statements: 70 },
+					}),
 				}),
 			);
 		});
@@ -424,11 +426,11 @@ describe("VitestConfig", () => {
 
 		it("should pass custom agent reporter options", async () => {
 			await VitestConfig.create({
-				agentReporter: { consoleStrategy: "complement", coverageConsoleLimit: 5 },
+				agentReporter: { strategy: "complement", reporter: { coverageConsoleLimit: 5 } },
 			});
 			expect(mockAgentPlugin).toHaveBeenCalledWith(
 				expect.objectContaining({
-					consoleStrategy: "complement",
+					strategy: "complement",
 					reporter: expect.objectContaining({ coverageConsoleLimit: 5 }),
 				}),
 			);

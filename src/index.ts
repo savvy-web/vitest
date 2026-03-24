@@ -28,6 +28,7 @@ import type { TestProjectInlineConfiguration, ViteUserConfig } from "vitest/conf
 
 export type { TestProjectInlineConfiguration } from "vitest/config";
 
+import type { AgentPluginOptions } from "vitest-agent-reporter";
 import { AgentPlugin } from "vitest-agent-reporter";
 import { getWorkspaceManagerRoot, getWorkspacePackagePaths } from "workspace-tools";
 
@@ -83,22 +84,13 @@ export interface VitestProjectOptions {
 }
 
 /**
- * Configuration options for the agent reporter plugin.
+ * Pass-through configuration for `vitest-agent-reporter`'s `AgentPlugin`.
  *
  * @see {@link VitestConfigOptions.agentReporter}
  *
  * @public
  */
-export interface AgentReporterConfig {
-	/** @defaultValue "own" */
-	consoleStrategy?: "own" | "complement";
-	/** @defaultValue 10 */
-	coverageConsoleLimit?: number;
-	/** @defaultValue true */
-	omitPassingTests?: boolean;
-	/** @defaultValue false */
-	includeBareZero?: boolean;
-}
+export type AgentReporterConfig = AgentPluginOptions;
 
 /**
  * Override for a specific test kind (unit, e2e, int).
@@ -140,7 +132,9 @@ export interface VitestConfigOptions {
 	 *
 	 * @remarks
 	 * When `true` or an {@link AgentReporterConfig} object, the plugin is
-	 * injected with the given options. When `false`, the plugin is not injected.
+	 * injected with the given options (with `strategy` defaulting to `"own"`
+	 * and `coverageThresholds` populated from the resolved coverage level).
+	 * When `false`, the plugin is not injected.
 	 *
 	 * @defaultValue `true`
 	 */
@@ -634,22 +628,14 @@ export class VitestConfig {
 
 		// Inject AgentPlugin
 		if (options?.agentReporter !== false) {
-			const coverageThreshold = Math.min(
-				thresholds.lines,
-				thresholds.branches,
-				thresholds.functions,
-				thresholds.statements,
-			);
-
-			const agentOpts = typeof options?.agentReporter === "object" ? options.agentReporter : {};
+			const agentOpts: AgentPluginOptions = typeof options?.agentReporter === "object" ? options.agentReporter : {};
 
 			const plugin = AgentPlugin({
-				consoleStrategy: agentOpts.consoleStrategy ?? "own",
+				strategy: "own",
+				...agentOpts,
 				reporter: {
-					coverageThreshold,
-					coverageConsoleLimit: agentOpts.coverageConsoleLimit,
-					omitPassingTests: agentOpts.omitPassingTests,
-					includeBareZero: agentOpts.includeBareZero,
+					coverageThresholds: { ...thresholds },
+					...agentOpts.reporter,
 				},
 			});
 
