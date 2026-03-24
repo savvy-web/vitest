@@ -1,6 +1,6 @@
 {
 	"name": "@savvy-web/vitest",
-	"version": "0.3.0",
+	"version": "1.0.0",
 	"private": true,
 	"description": "Vitest utility functions for Silk Suite deployment system",
 	"homepage": "https://github.com/savvy-web/vitest#readme",

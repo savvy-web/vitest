@@ -1,5 +1,52 @@
 # @savvy-web/pnpm-module-template
 
+## 1.0.0
+
+### Breaking Changes
+
+* [`aafb73e`](https://github.com/savvy-web/vitest/commit/aafb73efb4b26e4c4d50b13a253b31184faa2efb) Replace callback-based `VitestConfig.create(callback, options?)` with
+  declarative `VitestConfig.create(options?, postProcess?)`. Coverage is
+  always enabled. `AgentPlugin` from `vitest-agent-reporter` is injected
+  by default with `strategy: "own"`.
+
+**Removed:** `VitestConfigCallback`, `VitestConfigCreateOptions`,
+`CoverageConfig` (public export), `DEFAULT_THRESHOLD`
+
+**Migration:** Replace callback usage with zero-config `VitestConfig.create()`
+or pass `VitestConfigOptions` for customization.
+
+`AgentReporterConfig` is now a type alias for the upstream
+`AgentPluginOptions` from `vitest-agent-reporter`. All plugin options
+are passed through directly. Coverage thresholds from the resolved
+coverage level are injected as the per-metric `coverageThresholds`
+object automatically.
+
+### Features
+
+* [`aafb73e`](https://github.com/savvy-web/vitest/commit/aafb73efb4b26e4c4d50b13a253b31184faa2efb) Add `VitestProject.int()` factory for integration tests (60s/30s timeouts)
+* Add chainable mutation methods: `override()`, `addInclude()`,
+  `addExclude()`, `addCoverageExclude()`
+* Add `COVERAGE_LEVELS` named presets (none/basic/standard/strict/full)
+* Add per-kind overrides via object or Map callback (`unit`, `e2e`, `int`)
+* Add `postProcess` escape hatch for full Vite config control
+* Support `.ts`, `.tsx`, `.js`, `.jsx` file extensions in test discovery
+* Auto-detect `vitest.setup.{ts,tsx,js,jsx}` per workspace package
+* Exclude `fixtures/` and `utils/` dirs at conventional `__test__/` locations
+* Support multiple `--project` flags for scoped coverage
+* Always-on v8 coverage with configurable thresholds
+
+### Dependencies
+
+* | [`aafb73e`](https://github.com/savvy-web/vitest/commit/aafb73efb4b26e4c4d50b13a253b31184faa2efb) | Dependency     | Type    | Action | From   | To |
+  | :----------------------------------------------------------------------------------------------- | :------------- | :------ | :----- | :----- | -- |
+  | vitest-agent-reporter                                                                            | peerDependency | updated | ^0.2.0 | ^1.0.0 |    |
+
+- | [`51b498c`](https://github.com/savvy-web/vitest/commit/51b498c2f18d5fcd8cf85c025da8ce4619cf6a19) | Dependency | Type    | Action | From   | To |
+  | :----------------------------------------------------------------------------------------------- | :--------- | :------ | :----- | :----- | -- |
+  | @savvy-web/changesets                                                                            | dependency | updated | ^0.5.3 | ^0.5.4 |    |
+  | @savvy-web/commitlint                                                                            | dependency | updated | ^0.4.2 | ^0.4.3 |    |
+  | @savvy-web/lint-staged                                                                           | dependency | updated | ^0.6.1 | ^0.6.2 |    |
+
 ## 0.3.0
 
 ### Features
