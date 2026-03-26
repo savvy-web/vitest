@@ -1,5 +1,16 @@
 # @savvy-web/pnpm-module-template
 
+## 1.0.1
+
+### Dependencies
+
+* | [`d3fbe8b`](https://github.com/savvy-web/vitest/commit/d3fbe8bfa776f964bc3e09d7c3ba5d93836e0cf4) | Dependency     | Type    | Action | From   | To |
+  | :----------------------------------------------------------------------------------------------- | :------------- | :------ | :----- | :----- | -- |
+  | @savvy-web/changesets                                                                            | devDependency  | updated | ^0.6.0 | ^0.7.0 |    |
+  | @savvy-web/lint-staged                                                                           | devDependency  | updated | ^0.6.2 | ^0.6.3 |    |
+  | vitest-agent-reporter                                                                            | devDependency  | updated | ^1.0.0 | ^1.1.0 |    |
+  | vitest-agent-reporter                                                                            | peerDependency | updated | ^1.0.0 | ^1.1.0 |    |
+
 ## 1.0.0
 
 ### Breaking Changes
