@@ -53,6 +53,8 @@ jobs:
             @savvy-web/pnpm-plugin-silk
           dependencies: |
             @savvy-web/*
+            vitest-agent-reporter
+            @vitest/coverage-v8
           run: |
             pnpm savvy-commit init
             pnpm savvy-lint init
