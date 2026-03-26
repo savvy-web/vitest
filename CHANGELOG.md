@@ -1,5 +1,13 @@
 # @savvy-web/pnpm-module-template
 
+## 1.0.2
+
+### Dependencies
+
+* | [`98cabc6`](https://github.com/savvy-web/vitest/commit/98cabc6536b50569851de13a22211756ece0ba80) | Dependency    | Type    | Action | From   | To |
+  | :----------------------------------------------------------------------------------------------- | :------------ | :------ | :----- | :----- | -- |
+  | @savvy-web/lint-staged                                                                           | devDependency | updated | ^0.6.3 | ^0.6.4 |    |
+
 ## 1.0.1
 
 ### Dependencies
