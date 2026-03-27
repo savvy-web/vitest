@@ -120,9 +120,25 @@ export interface VitestConfigOptions {
 	 * preset from {@link VitestConfig.COVERAGE_LEVELS} is used. When a
 	 * {@link CoverageThresholds} object is provided, it is used directly.
 	 *
-	 * @defaultValue `"strict"` (lines: 80, branches: 75, functions: 80, statements: 80)
+	 * @defaultValue `"none"` (lines: 0, branches: 0, functions: 0, statements: 0)
 	 */
 	coverage?: CoverageLevelName | CoverageThresholds;
+
+	/**
+	 * Coverage targets communicated to `vitest-agent-reporter`.
+	 *
+	 * @remarks
+	 * Targets inform the reporter where coverage gaps exist but do **not**
+	 * cause test failures. When the agent reporter is enabled, these
+	 * thresholds are forwarded to the plugin's `reporter.coverageTargets`.
+	 *
+	 * If {@link VitestConfigOptions.agentReporter | agentReporter} is an
+	 * object with its own `reporter.coverageTargets`, the explicit plugin
+	 * option takes precedence and a warning is logged.
+	 *
+	 * @defaultValue `"basic"` (lines: 50, branches: 50, functions: 50, statements: 50)
+	 */
+	coverageTargets?: CoverageLevelName | CoverageThresholds;
 
 	/** Additional glob patterns to exclude from coverage reporting. */
 	coverageExclude?: string[];
@@ -629,12 +645,23 @@ export class VitestConfig {
 		// Inject AgentPlugin
 		if (options?.agentReporter !== false) {
 			const agentOpts: AgentPluginOptions = typeof options?.agentReporter === "object" ? options.agentReporter : {};
+			const targets = VitestConfig.resolveTargets(options);
+
+			// Explicit plugin-level coverageTargets takes precedence
+			const hasExplicitTargets = agentOpts.reporter?.coverageTargets !== undefined;
+			if (hasExplicitTargets && options?.coverageTargets !== undefined) {
+				console.warn(
+					"[@savvy-web/vitest] Both top-level coverageTargets and agentReporter.reporter.coverageTargets are set. " +
+						"Using agentReporter.reporter.coverageTargets.",
+				);
+			}
 
 			const plugin = AgentPlugin({
 				strategy: "own",
 				...agentOpts,
 				reporter: {
 					coverageThresholds: { ...thresholds },
+					...(!hasExplicitTargets ? { coverageTargets: { ...targets } } : {}),
 					...agentOpts.reporter,
 				},
 			});
@@ -978,16 +1005,32 @@ export class VitestConfig {
 	 * Resolves coverage thresholds from options.
 	 *
 	 * @privateRemarks
-	 * Priority: `options.coverage` (name or object) \> `COVERAGE_LEVELS.strict`.
+	 * Priority: `options.coverage` (name or object) \> `COVERAGE_LEVELS.none`.
 	 */
 	private static resolveThresholds(options?: VitestConfigOptions): CoverageThresholds {
 		if (options?.coverage === undefined) {
-			return { ...VitestConfig.COVERAGE_LEVELS.strict };
+			return { ...VitestConfig.COVERAGE_LEVELS.none };
 		}
 		if (typeof options.coverage === "string") {
 			return { ...VitestConfig.COVERAGE_LEVELS[options.coverage] };
 		}
 		return { ...options.coverage };
+	}
+
+	/**
+	 * Resolves coverage targets from options.
+	 *
+	 * @privateRemarks
+	 * Priority: `options.coverageTargets` (name or object) \> `COVERAGE_LEVELS.basic`.
+	 */
+	private static resolveTargets(options?: VitestConfigOptions): CoverageThresholds {
+		if (options?.coverageTargets === undefined) {
+			return { ...VitestConfig.COVERAGE_LEVELS.basic };
+		}
+		if (typeof options.coverageTargets === "string") {
+			return { ...VitestConfig.COVERAGE_LEVELS[options.coverageTargets] };
+		}
+		return { ...options.coverageTargets };
 	}
 
 	/**

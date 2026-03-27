@@ -295,6 +295,7 @@ Options for `VitestConfig.create()`.
 ```typescript
 interface VitestConfigOptions {
   coverage?: CoverageLevelName | CoverageThresholds;
+  coverageTargets?: CoverageLevelName | CoverageThresholds;
   coverageExclude?: string[];
   agentReporter?: boolean | AgentReporterConfig;
   pool?: "threads" | "forks" | "vmThreads" | "vmForks";
@@ -306,7 +307,8 @@ interface VitestConfigOptions {
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `coverage` | `CoverageLevelName \| CoverageThresholds` | `"strict"` | Coverage level name or explicit thresholds |
+| `coverage` | `CoverageLevelName \| CoverageThresholds` | `"none"` | Coverage level name or explicit thresholds. Failing below these thresholds fails the test run. |
+| `coverageTargets` | `CoverageLevelName \| CoverageThresholds` | `"basic"` | Coverage targets forwarded to `vitest-agent-reporter`. Informs the reporter where gaps exist without failing tests. If `agentReporter.reporter.coverageTargets` is also set, the explicit plugin option wins and a warning is logged. |
 | `coverageExclude` | `string[]` | `[]` | Additional glob patterns excluded from coverage (additive to built-in defaults) |
 | `agentReporter` | `boolean \| AgentReporterConfig` | `true` | Whether to inject the `vitest-agent-reporter` plugin |
 | `pool` | `"threads" \| "forks" \| "vmThreads" \| "vmForks"` | Vitest default | Vitest pool mode |

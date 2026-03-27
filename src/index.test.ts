@@ -413,6 +413,7 @@ describe("VitestConfig", () => {
 				expect.objectContaining({
 					reporter: expect.objectContaining({
 						coverageThresholds: { lines: 70, branches: 65, functions: 70, statements: 70 },
+						coverageTargets: { lines: 50, branches: 50, functions: 50, statements: 50 },
 					}),
 				}),
 			);
@@ -487,15 +488,15 @@ describe("VitestConfig", () => {
 			mockAgentPlugin.mockClear();
 		});
 
-		it("should default all thresholds to strict level", async () => {
+		it("should default all thresholds to none level", async () => {
 			const result = await VitestConfig.create();
 			const test = result.test as Record<string, unknown>;
 			const coverage = test.coverage as Record<string, unknown>;
 			expect(coverage.thresholds).toEqual({
-				lines: 80,
-				functions: 80,
-				branches: 75,
-				statements: 80,
+				lines: 0,
+				functions: 0,
+				branches: 0,
+				statements: 0,
 			});
 		});
 
@@ -523,6 +524,95 @@ describe("VitestConfig", () => {
 				functions: 85,
 				statements: 75,
 			});
+		});
+	});
+
+	describe("coverageTargets", () => {
+		beforeEach(() => {
+			setupWorkspace([]);
+			mockAgentPlugin.mockClear();
+		});
+
+		it("should default coverageTargets to basic level", async () => {
+			await VitestConfig.create();
+			expect(mockAgentPlugin).toHaveBeenCalledWith(
+				expect.objectContaining({
+					reporter: expect.objectContaining({
+						coverageTargets: { lines: 50, branches: 50, functions: 50, statements: 50 },
+					}),
+				}),
+			);
+		});
+
+		it("should resolve named coverageTargets level", async () => {
+			await VitestConfig.create({ coverageTargets: "standard" });
+			expect(mockAgentPlugin).toHaveBeenCalledWith(
+				expect.objectContaining({
+					reporter: expect.objectContaining({
+						coverageTargets: { lines: 70, branches: 65, functions: 70, statements: 70 },
+					}),
+				}),
+			);
+		});
+
+		it("should accept custom coverageTargets object", async () => {
+			await VitestConfig.create({
+				coverageTargets: { lines: 60, branches: 55, functions: 60, statements: 60 },
+			});
+			expect(mockAgentPlugin).toHaveBeenCalledWith(
+				expect.objectContaining({
+					reporter: expect.objectContaining({
+						coverageTargets: { lines: 60, branches: 55, functions: 60, statements: 60 },
+					}),
+				}),
+			);
+		});
+
+		it("should not pass coverageTargets when agentReporter is disabled", async () => {
+			await VitestConfig.create({ agentReporter: false, coverageTargets: "full" });
+			expect(mockAgentPlugin).not.toHaveBeenCalled();
+		});
+
+		it("should let explicit agentReporter.reporter.coverageTargets win", async () => {
+			const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			await VitestConfig.create({
+				coverageTargets: "basic",
+				agentReporter: {
+					reporter: {
+						coverageTargets: { lines: 99, branches: 99, functions: 99, statements: 99 },
+					},
+				},
+			});
+			expect(mockAgentPlugin).toHaveBeenCalledWith(
+				expect.objectContaining({
+					reporter: expect.objectContaining({
+						coverageTargets: { lines: 99, branches: 99, functions: 99, statements: 99 },
+					}),
+				}),
+			);
+			expect(warnSpy).toHaveBeenCalledOnce();
+			expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Both top-level coverageTargets"));
+			warnSpy.mockRestore();
+		});
+
+		it("should not warn when only agentReporter.reporter.coverageTargets is set", async () => {
+			const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			await VitestConfig.create({
+				agentReporter: {
+					reporter: {
+						coverageTargets: { lines: 99, branches: 99, functions: 99, statements: 99 },
+					},
+				},
+			});
+			expect(mockAgentPlugin).toHaveBeenCalledWith(
+				expect.objectContaining({
+					reporter: expect.objectContaining({
+						coverageTargets: { lines: 99, branches: 99, functions: 99, statements: 99 },
+					}),
+				}),
+			);
+			expect(warnSpy).not.toHaveBeenCalled();
+			warnSpy.mockRestore();
 		});
 	});
 

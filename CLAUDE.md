@@ -55,7 +55,8 @@ pnpm vitest run src/index.test.ts
   that discovers workspace packages, classifies test files (unit/e2e/int),
   generates coverage config with named presets (`COVERAGE_LEVELS`),
   injects `AgentPlugin` from `vitest-agent-reporter`, and always enables
-  v8 coverage. Supports per-kind overrides and a `postProcess` escape hatch.
+  v8 coverage. Defaults: `coverage: "none"`, `coverageTargets: "basic"`.
+  Supports per-kind overrides and a `postProcess` escape hatch.
 - **`VitestProject`**: Class with `unit()`, `e2e()`, `int()`, and `custom()`
   factory methods that produce `TestProjectInlineConfiguration` objects
   with sensible defaults per test kind. Mutation methods: `override()`,

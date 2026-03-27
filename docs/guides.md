@@ -32,10 +32,11 @@ pnpm vitest run --project=@savvy-web/my-lib
 
 ## Coverage Levels
 
-Select a named coverage level or provide explicit thresholds:
+Select a named coverage level or provide explicit thresholds. The
+default is `"none"` -- tests never fail due to coverage out of the box.
 
 ```typescript
-// Named level (default is "strict")
+// Named level
 export default VitestConfig.create({ coverage: "standard" });
 
 // Explicit thresholds
@@ -51,6 +52,41 @@ export default VitestConfig.create({
 | `standard` | 70 | 65 | 70 | 70 |
 | `strict` | 80 | 75 | 80 | 80 |
 | `full` | 90 | 85 | 90 | 90 |
+
+## Coverage Targets
+
+Coverage targets are soft thresholds forwarded to `vitest-agent-reporter`.
+They inform the reporter where coverage gaps exist without failing the
+test run. The default is `"basic"`.
+
+```typescript
+// Set targets higher than thresholds to guide development
+export default VitestConfig.create({
+  coverage: "none",
+  coverageTargets: "standard",
+});
+
+// Explicit target thresholds
+export default VitestConfig.create({
+  coverageTargets: { lines: 80, branches: 70, functions: 80, statements: 80 },
+});
+```
+
+When `coverageTargets` is set at the top level and
+`agentReporter.reporter.coverageTargets` is also set, the explicit
+plugin option takes precedence and a warning is logged:
+
+```typescript
+// The agentReporter.reporter.coverageTargets wins here
+export default VitestConfig.create({
+  coverageTargets: "basic",
+  agentReporter: {
+    reporter: {
+      coverageTargets: { lines: 90, branches: 85, functions: 90, statements: 90 },
+    },
+  },
+});
+```
 
 ## Additional Coverage Excludes
 
@@ -128,8 +164,10 @@ export default VitestConfig.create({
 | `omitPassingTests` | `true` | Whether to omit passing tests from output |
 | `includeBareZero` | `false` | Whether to include files with zero coverage |
 
-The reporter's `coverageThreshold` is automatically derived from the
-minimum of the four coverage thresholds.
+The reporter's `coverageThresholds` and `coverageTargets` are
+automatically populated from the top-level `coverage` and
+`coverageTargets` options respectively. See
+[Coverage Targets](#coverage-targets) for details on soft thresholds.
 
 ## Pool Configuration
 
@@ -264,7 +302,8 @@ import { VitestConfig } from "@savvy-web/vitest";
 
 export default VitestConfig.create(
   {
-    coverage: "strict",
+    coverage: "standard",
+    coverageTargets: "strict",
     pool: "forks",
     coverageExclude: ["src/legacy/**"],
     agentReporter: {
