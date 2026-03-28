@@ -1,5 +1,32 @@
 # @savvy-web/pnpm-module-template
 
+## 1.1.0
+
+### Features
+
+* [`217f10c`](https://github.com/savvy-web/vitest/commit/217f10cd76dcd3ae6a3d37b7cbbe04c51bbf8a47) ### Coverage Targets
+
+Added a top-level `coverageTargets` option to `VitestConfig.create()` that proxies soft coverage thresholds to `vitest-agent-reporter`. Targets inform the reporter where coverage gaps exist without failing the test run.
+
+```typescript
+export default VitestConfig.create({
+  coverage: "none",
+  coverageTargets: "standard",
+});
+```
+
+Accepts the same `CoverageLevelName` or `CoverageThresholds` values as the `coverage` option. Defaults to `"basic"` when omitted.
+
+When both `coverageTargets` and `agentReporter.reporter.coverageTargets` are set, the explicit plugin option takes precedence and a warning is logged.
+
+### Default Coverage Level Change
+
+The default `coverage` level is now `"none"` (previously `"strict"`). Tests no longer fail due to coverage thresholds out of the box. Set `coverage` explicitly to restore enforcement:
+
+```typescript
+export default VitestConfig.create({ coverage: "strict" });
+```
+
 ## 1.0.1
 
 ### Dependencies
