@@ -32,7 +32,17 @@ import { VitestConfig } from "@savvy-web/vitest";
 
 // Zero config -- everything automatic
 export default VitestConfig.create();
+
+// Set coverage thresholds and targets
+export default VitestConfig.create({
+  coverage: "standard",
+  coverageTargets: "strict",
+});
 ```
+
+Out of the box, `coverage` defaults to `"none"` (tests never fail due to
+coverage) and `coverageTargets` defaults to `"basic"` (the agent reporter
+highlights coverage gaps without blocking CI).
 
 ## Directory Structure
 

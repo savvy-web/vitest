@@ -4,6 +4,9 @@
 	"private": true,
 	"description": "Vitest utility functions for Silk Suite deployment system",
 	"homepage": "https://github.com/savvy-web/vitest#readme",
+	"bugs": {
+		"url": "https://github.com/savvy-web/vitest/issues"
+	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/savvy-web/vitest.git"
@@ -40,16 +43,16 @@
 		"types:check": "tsgo --noEmit"
 	},
 	"dependencies": {
-		"workspace-tools": "^0.41.0"
+		"workspace-tools": "0.41.0"
 	},
 	"devDependencies": {
-		"@savvy-web/changesets": "^0.7.0",
-		"@savvy-web/commitlint": "^0.4.3",
-		"@savvy-web/lint-staged": "^0.6.4",
-		"@savvy-web/rslib-builder": "^0.19.0",
-		"@vitest/coverage-v8": "^4.1.1",
-		"vitest": "^4.1.1",
-		"vitest-agent-reporter": "^1.1.0"
+		"@savvy-web/changesets": "^0.7.1",
+		"@savvy-web/commitlint": "^0.4.4",
+		"@savvy-web/lint-staged": "^0.6.5",
+		"@savvy-web/rslib-builder": "^0.19.1",
+		"@vitest/coverage-v8": "^4.1.2",
+		"vitest": "^4.1.2",
+		"vitest-agent-reporter": "^1.2.0"
 	},
 	"peerDependencies": {
 		"@types/node": "catalog:silkPeers",
