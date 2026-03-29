@@ -22,16 +22,13 @@ coverage configuration, or the VitestProject/VitestConfig class APIs.
 pnpm run lint              # Check code with Biome
 pnpm run lint:fix          # Auto-fix lint issues
 pnpm run typecheck         # Type-check via tsgo
-pnpm run test              # Run all tests (coverage always on)
-pnpm run test:watch        # Run tests in watch mode
+pnpm run test              # Run all tests
 ```
 
 ### Building
 
 ```bash
 pnpm run build             # Build all packages (dev + prod)
-pnpm run build:dev         # Build development output only
-pnpm run build:prod        # Build production/npm output only
 ```
 
 ### Running a Single Test

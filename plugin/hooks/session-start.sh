@@ -47,6 +47,7 @@ colocated_count=0
 mixed_count=0
 no_tests_count=0
 colocated_packages=""
+mixed_packages=""
 
 while IFS= read -r pkg_dir; do
   [ -z "$pkg_dir" ] && continue
@@ -68,7 +69,7 @@ while IFS= read -r pkg_dir; do
 
   if $has_test_dir && $has_colocated; then
     mixed_count=$((mixed_count + 1))
-    colocated_packages="${colocated_packages:+$colocated_packages, }$pkg_name"
+    mixed_packages="${mixed_packages:+$mixed_packages, }$pkg_name"
   elif $has_test_dir; then
     test_dir_count=$((test_dir_count + 1))
   elif $has_colocated; then
@@ -159,7 +160,7 @@ else
     echo "- $colocated_count package(s) have co-located tests in \`src/\` ($colocated_packages)"
   fi
   if [ "$mixed_count" -gt 0 ]; then
-    echo "- $mixed_count package(s) have both \`__test__/\` and co-located tests ($colocated_packages)"
+    echo "- $mixed_count package(s) have both \`__test__/\` and co-located tests ($mixed_packages)"
   fi
   echo ""
   echo "**Migrate co-located tests to \`__test__/\`.** The \`__test__/\` pattern"

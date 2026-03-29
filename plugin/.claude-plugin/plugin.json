@@ -6,7 +6,7 @@
 		"name": "C. Spencer Beggs",
 		"email": "spencer@savvyweb.systems"
 	},
-	"homepage": "https://github.com/savvy-web/vitest/plugin#readme",
+	"homepage": "https://github.com/savvy-web/vitest/tree/main/plugin",
 	"repository": "https://github.com/savvy-web/vitest.git",
 	"license": "MIT"
 }
