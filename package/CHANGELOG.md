@@ -1,5 +1,26 @@
 # @savvy-web/pnpm-module-template
 
+## 1.2.0
+
+### Features
+
+* [`dd6d5af`](https://github.com/savvy-web/vitest/commit/dd6d5afc0732bb1d09e1f6c6ff2a7c684634cbae) Added a companion Claude Code plugin (`plugin/`) that provides AI coding agents with automatic test convention context and a full configuration API reference.
+
+  The plugin ships two components:
+
+  * **Session-start hook** — on every Claude Code session start, the hook injects workspace discovery context (auto-discovery behavior, `__test__/` directory layout, test classification rules by filename convention) and dynamically scans the current workspace to report which packages use `__test__/` directories, co-located tests, or both.
+  * **`/vitest:config` skill** — a slash-command reference covering all `VitestConfigOptions` fields (`coverage`, `coverageTargets`, `coverageExclude`, `agentReporter`, `pool`, `unit`/`e2e`/`int` overrides, `postProcess`), `VitestProject` factory defaults and mutation methods, and common configuration recipes.
+
+### Dependencies
+
+* | [`35db183`](https://github.com/savvy-web/vitest/commit/35db18309e6433968a8288b38e0227de2613aef2) | Dependency    | Type    | Action | From   | To |
+  | :----------------------------------------------------------------------------------------------- | :------------ | :------ | :----- | :----- | -- |
+  | @savvy-web/lint-staged                                                                           | devDependency | updated | ^0.6.5 | ^0.6.6 |    |
+
+### Maintenance
+
+* [`dd6d5af`](https://github.com/savvy-web/vitest/commit/dd6d5afc0732bb1d09e1f6c6ff2a7c684634cbae) Restructured the repository into a sidecar pattern. The publishable package source moved from the repo root to `package/` (`src/`, `rslib.config.ts`, `tsconfig.json`, `turbo.json`). No changes were made to the package's exported API — the `@savvy-web/vitest` module surface is identical.
+
 ## 1.1.0
 
 ### Features
