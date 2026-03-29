@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"project": {
 		"name": "savvy-web/vitest",
-		"type": "package",
+		"type": "monorepo",
 		"repository": "https://github.com/savvy-web/vitest",
 		"maintainer": "C. Spencer Beggs"
 	},
@@ -16,12 +16,12 @@
 	},
 	"modules": {
 		"vitest": {
-			"path": ".",
+			"path": "package",
 			"designDocsPath": ".claude/design/vitest",
 			"categories": ["architecture", "testing", "integration"],
 			"maintainer": "C. Spencer Beggs",
 			"userDocs": {
-				"readme": "README.md",
+				"readme": "package/README.md",
 				"repoDocs": null,
 				"siteDocs": null
 			}
