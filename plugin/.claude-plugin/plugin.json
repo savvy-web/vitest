@@ -1,0 +1,12 @@
+{
+	"name": "vitest",
+	"description": "Companion plugin for @savvy-web/vitest that provides test convention context and configuration reference for AI coding agents",
+	"version": "1.0.0",
+	"author": {
+		"name": "C. Spencer Beggs",
+		"email": "spencer@savvyweb.systems"
+	},
+	"homepage": "https://github.com/savvy-web/vitest/plugin#readme",
+	"repository": "https://github.com/savvy-web/vitest.git",
+	"license": "MIT"
+}
