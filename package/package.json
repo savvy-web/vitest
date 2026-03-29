@@ -1,6 +1,6 @@
 {
 	"name": "@savvy-web/vitest",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"private": true,
 	"description": "Vitest utility functions for Silk Suite deployment system",
 	"homepage": "https://github.com/savvy-web/vitest#readme",
@@ -36,7 +36,7 @@
 		"@rslib/core": "^0.20.1",
 		"@savvy-web/rslib-builder": "^0.19.1",
 		"@vitest/coverage-v8": "^4.1.2",
-		"vitest": "^4.1.2",
+		"vitest": "^0.0.0",
 		"vitest-agent-reporter": "^1.2.0"
 	},
 	"peerDependencies": {
@@ -44,7 +44,7 @@
 		"@typescript/native-preview": "catalog:silkPeers",
 		"@vitest/coverage-v8": "^4.1.0",
 		"typescript": "catalog:silkPeers",
-		"vitest": "^4.1.0",
+		"vitest": "^0.0.0",
 		"vitest-agent-reporter": "^1.1.0"
 	},
 	"peerDependenciesMeta": {
