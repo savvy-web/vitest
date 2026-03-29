@@ -22,22 +22,19 @@ coverage configuration, or the VitestProject/VitestConfig class APIs.
 pnpm run lint              # Check code with Biome
 pnpm run lint:fix          # Auto-fix lint issues
 pnpm run typecheck         # Type-check via tsgo
-pnpm run test              # Run all tests (coverage always on)
-pnpm run test:watch        # Run tests in watch mode
+pnpm run test              # Run all tests
 ```
 
 ### Building
 
 ```bash
 pnpm run build             # Build all packages (dev + prod)
-pnpm run build:dev         # Build development output only
-pnpm run build:prod        # Build production/npm output only
 ```
 
 ### Running a Single Test
 
 ```bash
-pnpm vitest run src/index.test.ts
+pnpm vitest run package/src/index.test.ts
 ```
 
 ## Architecture
@@ -46,8 +43,9 @@ pnpm vitest run src/index.test.ts
 
 - **Package Manager**: pnpm with workspaces
 - **Build Orchestration**: Turbo for caching and task dependencies
-- **Source**: `src/` at project root
-- **Shared Configs**: `lib/configs/`
+- **`package/`**: Publishable npm package (`@savvy-web/vitest`); contains `src/`, build config, etc.
+- **`plugin/`**: Claude Code companion plugin for test convention context
+- **Workspace root**: Shared configs in `lib/`
 
 ### Core System
 
@@ -64,12 +62,12 @@ pnpm vitest run src/index.test.ts
 
 ### Build Pipeline
 
-Rslib with dual output:
+Rslib with dual output under `package/dist/`:
 
-1. `dist/dev/` - Development build with source maps
-2. `dist/npm/` - Production build for npm publishing
+1. `package/dist/dev/` - Development build with source maps
+2. `package/dist/npm/` - Production build for npm publishing
 
-Turbo tasks define dependencies: `typecheck` depends on `build`.
+Turbo config is split: root `turbo.json` defines workspace tasks; `package/turbo.json` defines package-specific tasks. `typecheck` depends on `build`.
 
 ### Code Quality
 

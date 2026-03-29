@@ -3,7 +3,10 @@
 	"changelog": [
 		"@savvy-web/changesets/changelog",
 		{
-			"repo": "savvy-web/vitest"
+			"repo": "savvy-web/vitest",
+			"versionFiles": [
+				{ "glob": "plugin/.claude-plugin/plugin.json", "paths": ["$.version"], "package": "@savvy-web/vitest" }
+			]
 		}
 	],
 	"commit": false,

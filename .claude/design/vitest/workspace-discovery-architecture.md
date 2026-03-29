@@ -3,8 +3,8 @@ status: current
 module: vitest
 category: architecture
 created: 2026-02-16
-updated: 2026-03-21
-last-synced: 2026-03-21
+updated: 2026-03-29
+last-synced: 2026-03-29
 completeness: 90
 related: []
 dependencies: []
@@ -26,9 +26,10 @@ options API, and agent reporter integration.
 4. [System Architecture](#system-architecture)
 5. [Data Flow](#data-flow)
 6. [Integration Points](#integration-points)
-7. [Testing Strategy](#testing-strategy)
-8. [Future Enhancements](#future-enhancements)
-9. [Related Documentation](#related-documentation)
+7. [Companion Plugin](#companion-plugin)
+8. [Testing Strategy](#testing-strategy)
+9. [Future Enhancements](#future-enhancements)
+10. [Related Documentation](#related-documentation)
 
 ---
 
@@ -78,7 +79,7 @@ watch mode or HMR do not re-scan the filesystem.
 
 #### Component 1: VitestProject (Class)
 
-**Location:** `src/index.ts`
+**Location:** `package/src/index.ts`
 
 **Purpose:** Encapsulates a single Vitest project with preset
 defaults per test kind. Uses a private constructor; instances are
@@ -161,7 +162,7 @@ export class VitestProject {
 
 #### Component 2: VitestConfig (Static Class)
 
-**Location:** `src/index.ts`
+**Location:** `package/src/index.ts`
 
 **Purpose:** Entry point that orchestrates workspace discovery,
 coverage configuration, reporter selection, agent plugin injection,
@@ -910,11 +911,98 @@ the returned promise directly.
 
 ---
 
+## Companion Plugin
+
+### Overview
+
+The repository includes a Claude Code companion plugin at `plugin/`
+that provides AI coding agents with test convention context and
+configuration reference. The plugin is distributed as a separate
+artifact from the npm package and is installed via Claude Code's
+plugin system.
+
+### Repository Structure
+
+The repo uses a sidecar pattern with two pnpm workspace members:
+
+```text
+vitest/                        (workspace root)
+  pnpm-workspace.yaml          packages: [".", "package"]
+  package.json                  workspace root (not publishable)
+  vitest.config.ts              workspace-level test config
+  turbo.json                    workspace-level Turbo config
+  package/                      publishable npm package
+    package.json                @savvy-web/vitest
+    src/index.ts                VitestConfig + VitestProject source
+    rslib.config.ts             dual-output build config
+    types/                      type declarations
+    dist/                       build output (dev + npm)
+  plugin/                       Claude Code companion plugin
+    .claude-plugin/
+      plugin.json               plugin manifest
+    hooks/
+      hooks.json                hook configuration
+      session-start.sh          SessionStart hook
+    skills/
+      config/
+        SKILL.md                vitest:config skill
+```
+
+The workspace root (`.`) owns the development tooling (Vitest,
+Biome, Turbo, Husky, Commitlint). The `package/` directory
+contains the publishable npm package source, build config, and
+output. The `plugin/` directory is not a workspace member; it is
+a standalone Claude Code plugin.
+
+### Plugin Components
+
+#### SessionStart Hook
+
+**Location:** `plugin/hooks/session-start.sh`
+
+**Purpose:** Injects test convention context at the start of every
+Claude Code session in projects that install this plugin.
+
+**Behavior:**
+
+1. Parses `pnpm-workspace.yaml` to find workspace package
+   directories
+2. Scans each package for test files in `src/` and `__test__/`
+3. Classifies packages by test pattern (dedicated `__test__/`,
+   co-located in `src/`, or mixed)
+4. Outputs static context explaining VitestConfig auto-discovery,
+   the `__test__/` directory layout, test classification rules
+   (e2e/int/unit by filename), and setup file detection
+5. Outputs dynamic context with detected test pattern statistics
+   and migration guidance for co-located tests
+6. Documents the agent reporter integration
+
+**Integration with VitestConfig:** The hook describes the same test
+classification rules and directory conventions that
+`VitestConfig.create()` uses for auto-discovery. This ensures AI
+agents understand the conventions without needing to read the source.
+
+#### Config Skill (vitest:config)
+
+**Location:** `plugin/skills/config/SKILL.md`
+
+**Purpose:** Provides the full VitestConfig/VitestProject API
+reference as a loadable skill. Agents invoke `/vitest:config` when
+modifying `vitest.config.ts` to get coverage level presets,
+`KindOverride` patterns, mutation methods, and common recipes.
+
+**Content:** Mirrors the API surface documented in this design doc
+(VitestConfigOptions, VitestProject factories, CoverageLevelName,
+AgentReporterConfig) in a concise reference format optimized for
+agent consumption.
+
+---
+
 ## Testing Strategy
 
 ### Unit Tests
 
-**Location:** `src/index.test.ts`
+**Location:** `package/src/index.test.ts`
 
 **Coverage:** 63 tests, 96.8% statement coverage, 100% function
 coverage.
@@ -990,13 +1078,18 @@ coverage.
 
 **Package Documentation:**
 
-* `README.md` -- Package overview
+* `package/README.md` -- Package overview
 * `CLAUDE.md` -- Development guide
+
+**Plugin Documentation:**
+
+* `plugin/README.md` -- Plugin overview
+* `plugin/skills/config/SKILL.md` -- VitestConfig API reference skill
 
 ---
 
 **Document Status:** Current. Reflects the implementation as of
-2026-03-21 at 90% completeness. The remaining 10% covers areas not
+2026-03-29 at 90% completeness. The remaining 10% covers areas not
 yet fully documented: edge-case behavior for malformed
 `package.json` files, detailed interaction with Vitest's internal
 project resolution, workspace-tools fallback paths, and the complete
