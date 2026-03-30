@@ -1,5 +1,11 @@
 # @savvy-web/pnpm-module-template
 
+## 1.2.1
+
+### Bug Fixes
+
+* [`476cc9f`](https://github.com/savvy-web/vitest/commit/476cc9f879302f2aadf63879845899f17d5e046d) Fixed session-start hook silently swallowing errors by converting from plain text stdout output to structured JSON `hookSpecificOutput.additionalContext` response with error trap and environment variable validation
+
 ## 1.2.0
 
 ### Features
