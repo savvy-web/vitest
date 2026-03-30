@@ -2,12 +2,18 @@
 set -euo pipefail
 
 # SessionStart hook: inject @savvy-web/vitest convention context.
-#
-# Outputs:
-# 1. Static context about VitestConfig.create() and test conventions
-# 2. Dynamic detection of test patterns in the current workspace
+# Outputs JSON with additionalContext about test conventions,
+# workspace discovery, and detected test patterns.
 
-PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
+# Error trap: surface failures instead of silently producing no output
+trap 'echo "ERROR: session-start.sh failed at line $LINENO (exit $?)" >&2; exit 1' ERR
+
+if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
+  echo "ERROR: CLAUDE_PROJECT_DIR is not set" >&2
+  exit 1
+fi
+
+PROJECT_DIR="$CLAUDE_PROJECT_DIR"
 
 # --- Detection Logic ---
 
@@ -83,24 +89,57 @@ done < <(find_workspace_packages)
 total_with_tests=$((test_dir_count + colocated_count + mixed_count))
 total_colocated=$((colocated_count + mixed_count))
 
-# --- Output ---
+# --- Build Context ---
 
-cat <<'STATIC'
+# Dynamic detection section
+if [ "$total_with_tests" -eq 0 ]; then
+  DETECTED_PATTERN="### Detected Pattern
+
+No test files detected yet. When adding tests, use the \`__test__/\`
+directory pattern described above."
+elif [ "$total_colocated" -eq 0 ]; then
+  DETECTED_PATTERN="### Detected Pattern
+
+All $total_with_tests package(s) with tests use \`__test__/\` directories.
+Follow this pattern when adding tests."
+else
+  DETECTED_PATTERN="### Detected Pattern
+"
+  if [ "$test_dir_count" -gt 0 ]; then
+    DETECTED_PATTERN="$DETECTED_PATTERN
+- $test_dir_count package(s) use \`__test__/\` directories"
+  fi
+  if [ "$colocated_count" -gt 0 ]; then
+    DETECTED_PATTERN="$DETECTED_PATTERN
+- $colocated_count package(s) have co-located tests in \`src/\` ($colocated_packages)"
+  fi
+  if [ "$mixed_count" -gt 0 ]; then
+    DETECTED_PATTERN="$DETECTED_PATTERN
+- $mixed_count package(s) have both \`__test__/\` and co-located tests ($mixed_packages)"
+  fi
+  DETECTED_PATTERN="$DETECTED_PATTERN
+
+**Migrate co-located tests to \`__test__/\`.** The \`__test__/\` pattern
+is preferred for this project."
+fi
+
+CONTEXT=$(cat <<CONTEXT
+<EXTREMELY_IMPORTANT>
 ## @savvy-web/vitest — Workspace Discovery
 
 This project uses **@savvy-web/vitest** for automatic Vitest project
-configuration. The `vitest.config.ts` calls `VitestConfig.create()` which
-auto-discovers all workspace packages with `src/` directories and generates
+configuration. The \`vitest.config.ts\` calls \`VitestConfig.create()\` which
+auto-discovers all workspace packages with \`src/\` directories and generates
 multi-project configs. **Do not manually configure test projects** — the
 plugin handles discovery, classification, coverage, and reporter setup.
 
-Use `/vitest:config` for the full options API when modifying `vitest.config.ts`.
+Use \`/vitest:config\` for the full options API when modifying \`vitest.config.ts\`.
 
 ### Test Directory Layout
 
-Use `__test__/` at the package root. This is the **preferred pattern**.
+Use \`__test__/\` at the package root. This is the **preferred pattern**.
 
-```
+\`\`\`
 package-root/
   src/                # source code (co-located tests supported but discouraged)
   __test__/           # dedicated test directory (preferred)
@@ -116,7 +155,7 @@ package-root/
       fixtures/       # excluded from discovery
       *.int.test.ts   # integration tests
   vitest.setup.ts     # optional — auto-detected and added to setupFiles
-```
+\`\`\`
 
 ### Test Classification
 
@@ -124,57 +163,29 @@ Tests are classified by **filename convention only** — location is irrelevant:
 
 | Pattern | Kind | Check order |
 | --- | --- | --- |
-| `*.e2e.(test\|spec).(ts\|tsx\|js\|jsx)` | e2e | first |
-| `*.int.(test\|spec).(ts\|tsx\|js\|jsx)` | integration | second |
-| `*.(test\|spec).(ts\|tsx\|js\|jsx)` | unit | catch-all |
+| \`*.e2e.(test\|spec).(ts\|tsx\|js\|jsx)\` | e2e | first |
+| \`*.int.(test\|spec).(ts\|tsx\|js\|jsx)\` | integration | second |
+| \`*.(test\|spec).(ts\|tsx\|js\|jsx)\` | unit | catch-all |
 
-When a package has 2+ test kinds, projects are suffixed: `@pkg:unit`,
-`@pkg:e2e`, `@pkg:int`. Single-kind packages use the bare name.
+When a package has 2+ test kinds, projects are suffixed: \`@pkg:unit\`,
+\`@pkg:e2e\`, \`@pkg:int\`. Single-kind packages use the bare name.
 
-STATIC
+${DETECTED_PATTERN}
 
-# Dynamic detection section
-if [ "$total_with_tests" -eq 0 ]; then
-  cat <<'EOF'
-### Detected Pattern
-
-No test files detected yet. When adding tests, use the `__test__/`
-directory pattern described above.
-
-EOF
-elif [ "$total_colocated" -eq 0 ]; then
-  cat <<EOF
-### Detected Pattern
-
-All $total_with_tests package(s) with tests use \`__test__/\` directories.
-Follow this pattern when adding tests.
-
-EOF
-else
-  echo "### Detected Pattern"
-  echo ""
-  if [ "$test_dir_count" -gt 0 ]; then
-    echo "- $test_dir_count package(s) use \`__test__/\` directories"
-  fi
-  if [ "$colocated_count" -gt 0 ]; then
-    echo "- $colocated_count package(s) have co-located tests in \`src/\` ($colocated_packages)"
-  fi
-  if [ "$mixed_count" -gt 0 ]; then
-    echo "- $mixed_count package(s) have both \`__test__/\` and co-located tests ($mixed_packages)"
-  fi
-  echo ""
-  echo "**Migrate co-located tests to \`__test__/\`.** The \`__test__/\` pattern"
-  echo "is preferred for this project."
-  echo ""
-fi
-
-cat <<'REPORTER'
 ### Agent Reporter
 
-`vitest-agent-reporter` is injected by default via `AgentPlugin`. It provides
+\`vitest-agent-reporter\` is injected by default via \`AgentPlugin\`. It provides
 MCP tools for structured test data, coverage analysis, and test history.
 Install its companion Claude Code plugin for full MCP tool access and
-session context.
-REPORTER
+session context.</EXTREMELY_IMPORTANT>
+CONTEXT
+)
+
+# Output as JSON with additionalContext
+jq -n --arg ctx "$CONTEXT" '{
+  "hookSpecificOutput": {
+    "additionalContext": $ctx
+  }
+}'
 
 exit 0

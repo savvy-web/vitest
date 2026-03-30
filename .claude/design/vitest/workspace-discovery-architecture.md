@@ -965,17 +965,20 @@ Claude Code session in projects that install this plugin.
 
 **Behavior:**
 
-1. Parses `pnpm-workspace.yaml` to find workspace package
+1. Validates `CLAUDE_PROJECT_DIR` is set and installs an error trap
+   to surface failures to stderr
+2. Parses `pnpm-workspace.yaml` to find workspace package
    directories
-2. Scans each package for test files in `src/` and `__test__/`
-3. Classifies packages by test pattern (dedicated `__test__/`,
+3. Scans each package for test files in `src/` and `__test__/`
+4. Classifies packages by test pattern (dedicated `__test__/`,
    co-located in `src/`, or mixed)
-4. Outputs static context explaining VitestConfig auto-discovery,
+5. Builds a context string covering VitestConfig auto-discovery,
    the `__test__/` directory layout, test classification rules
-   (e2e/int/unit by filename), and setup file detection
-5. Outputs dynamic context with detected test pattern statistics
-   and migration guidance for co-located tests
-6. Documents the agent reporter integration
+   (e2e/int/unit by filename), setup file detection, detected
+   test pattern statistics, migration guidance for co-located
+   tests, and the agent reporter integration
+6. Outputs structured JSON with `hookSpecificOutput.additionalContext`
+   so errors are not silently swallowed
 
 **Integration with VitestConfig:** The hook describes the same test
 classification rules and directory conventions that
