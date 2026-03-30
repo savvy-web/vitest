@@ -29,7 +29,7 @@
 		"types:check": "tsgo --noEmit"
 	},
 	"dependencies": {
-		"workspace-tools": "0.41.0"
+		"workspace-tools": "0.41.1"
 	},
 	"devDependencies": {
 		"@microsoft/api-extractor": "^7.57.7",
