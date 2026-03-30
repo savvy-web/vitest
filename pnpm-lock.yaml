@@ -67,8 +67,8 @@ importers:
         specifier: catalog:silkPeers
         version: 5.9.3
       workspace-tools:
-        specifier: 0.41.0
-        version: 0.41.0
+        specifier: 0.41.1
+        version: 0.41.1
     devDependencies:
       '@microsoft/api-extractor':
         specifier: ^7.57.7
@@ -3838,6 +3838,9 @@ packages:
 
   workspace-tools@0.41.0:
     resolution: {integrity: sha512-iBB6LNqtJpfjTWnyjlgOwdJmf1wBTUsIr1V5phOBCJMywubpYAijDUqhgz7RfrTYdscA4vEFyhjiy4OSAGULcA==}
+
+  workspace-tools@0.41.1:
+    resolution: {integrity: sha512-xFnwNaB8A40/2KUyo21fSv0RXHnoaNNMMHDrXPM79399V46Rx8uNPxsq78rRDfvvKVzaVGOZE9cyT6uCKqqQ4Q==}
 
   workspaces-effect@0.3.0:
     resolution: {integrity: sha512-ntu9AdP2Q2DTLQdb8rLddzkTBidkbnH0glTS4VVLj/DDTI21ru+sVZq1SIdaNgKqG0DHACoIqRcYGYxvYn3x5g==}
@@ -8083,6 +8086,15 @@ snapshots:
       fast-glob: 3.3.3
       git-url-parse: 16.1.0
       globby: 11.1.0
+      jju: 1.4.0
+      js-yaml: 4.1.1
+      micromatch: 4.0.8
+
+  workspace-tools@0.41.1:
+    dependencies:
+      '@yarnpkg/lockfile': 1.1.0
+      fast-glob: 3.3.3
+      git-url-parse: 16.1.0
       jju: 1.4.0
       js-yaml: 4.1.1
       micromatch: 4.0.8
