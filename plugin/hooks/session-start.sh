@@ -8,6 +8,9 @@ set -euo pipefail
 # Error trap: surface failures instead of silently producing no output
 trap 'echo "ERROR: session-start.sh failed at line $LINENO (exit $?)" >&2; exit 1' ERR
 
+# Consume stdin to prevent broken pipe errors
+cat > /dev/null
+
 if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
   echo "ERROR: CLAUDE_PROJECT_DIR is not set" >&2
   exit 1
@@ -93,53 +96,51 @@ total_colocated=$((colocated_count + mixed_count))
 
 # Dynamic detection section
 if [ "$total_with_tests" -eq 0 ]; then
-  DETECTED_PATTERN="### Detected Pattern
-
-No test files detected yet. When adding tests, use the \`__test__/\`
-directory pattern described above."
+  DETECTED_PATTERN="<detected_pattern>
+No test files detected yet. When adding tests, use the __test__/
+directory pattern described above.
+</detected_pattern>"
 elif [ "$total_colocated" -eq 0 ]; then
-  DETECTED_PATTERN="### Detected Pattern
-
-All $total_with_tests package(s) with tests use \`__test__/\` directories.
-Follow this pattern when adding tests."
+  DETECTED_PATTERN="<detected_pattern>
+All $total_with_tests package(s) with tests use __test__/ directories.
+Follow this pattern when adding tests.
+</detected_pattern>"
 else
-  DETECTED_PATTERN="### Detected Pattern
-"
+  DETECTED_PATTERN="<detected_pattern>"
   if [ "$test_dir_count" -gt 0 ]; then
     DETECTED_PATTERN="$DETECTED_PATTERN
-- $test_dir_count package(s) use \`__test__/\` directories"
+$test_dir_count package(s) use __test__/ directories."
   fi
   if [ "$colocated_count" -gt 0 ]; then
     DETECTED_PATTERN="$DETECTED_PATTERN
-- $colocated_count package(s) have co-located tests in \`src/\` ($colocated_packages)"
+$colocated_count package(s) have co-located tests in src/ ($colocated_packages)."
   fi
   if [ "$mixed_count" -gt 0 ]; then
     DETECTED_PATTERN="$DETECTED_PATTERN
-- $mixed_count package(s) have both \`__test__/\` and co-located tests ($mixed_packages)"
+$mixed_count package(s) have both __test__/ and co-located tests ($mixed_packages)."
   fi
   DETECTED_PATTERN="$DETECTED_PATTERN
-
-**Migrate co-located tests to \`__test__/\`.** The \`__test__/\` pattern
-is preferred for this project."
+Migrate co-located tests to __test__/. The __test__/ pattern is preferred for this project.
+</detected_pattern>"
 fi
 
 CONTEXT=$(cat <<CONTEXT
 <EXTREMELY_IMPORTANT>
-## @savvy-web/vitest — Workspace Discovery
+<savvy_web_vitest_workspace_discovery>
 
-This project uses **@savvy-web/vitest** for automatic Vitest project
-configuration. The \`vitest.config.ts\` calls \`VitestConfig.create()\` which
-auto-discovers all workspace packages with \`src/\` directories and generates
-multi-project configs. **Do not manually configure test projects** — the
+<overview>
+This project uses @savvy-web/vitest for automatic Vitest project
+configuration. vitest.config.ts calls VitestConfig.create() which
+auto-discovers all workspace packages with src/ directories and generates
+multi-project configs. Do not manually configure test projects — the
 plugin handles discovery, classification, coverage, and reporter setup.
 
-Use \`/vitest:config\` for the full options API when modifying \`vitest.config.ts\`.
+Use /vitest:config for the full options API when modifying vitest.config.ts.
+</overview>
 
-### Test Directory Layout
+<test_directory_layout>
+Use __test__/ at the package root. This is the preferred pattern.
 
-Use \`__test__/\` at the package root. This is the **preferred pattern**.
-
-\`\`\`
 package-root/
   src/                # source code (co-located tests supported but discouraged)
   __test__/           # dedicated test directory (preferred)
@@ -155,35 +156,37 @@ package-root/
       fixtures/       # excluded from discovery
       *.int.test.ts   # integration tests
   vitest.setup.ts     # optional — auto-detected and added to setupFiles
-\`\`\`
+</test_directory_layout>
 
-### Test Classification
+<test_classification>
+Tests are classified by filename convention only — location is irrelevant:
 
-Tests are classified by **filename convention only** — location is irrelevant:
+*.e2e.(test|spec).(ts|tsx|js|jsx)  → e2e (checked first)
+*.int.(test|spec).(ts|tsx|js|jsx)  → integration (checked second)
+*.(test|spec).(ts|tsx|js|jsx)      → unit (catch-all)
 
-| Pattern | Kind | Check order |
-| --- | --- | --- |
-| \`*.e2e.(test\|spec).(ts\|tsx\|js\|jsx)\` | e2e | first |
-| \`*.int.(test\|spec).(ts\|tsx\|js\|jsx)\` | integration | second |
-| \`*.(test\|spec).(ts\|tsx\|js\|jsx)\` | unit | catch-all |
-
-When a package has 2+ test kinds, projects are suffixed: \`@pkg:unit\`,
-\`@pkg:e2e\`, \`@pkg:int\`. Single-kind packages use the bare name.
+When a package has 2+ test kinds, projects are suffixed: @pkg:unit,
+@pkg:e2e, @pkg:int. Single-kind packages use the bare name.
+</test_classification>
 
 ${DETECTED_PATTERN}
 
-### Agent Reporter
-
-\`vitest-agent-reporter\` is injected by default via \`AgentPlugin\`. It provides
+<agent_reporter>
+vitest-agent-reporter is injected by default via AgentPlugin. It provides
 MCP tools for structured test data, coverage analysis, and test history.
 Install its companion Claude Code plugin for full MCP tool access and
-session context.</EXTREMELY_IMPORTANT>
+session context.
+</agent_reporter>
+
+</savvy_web_vitest_workspace_discovery>
+</EXTREMELY_IMPORTANT>
 CONTEXT
 )
 
 # Output as JSON with additionalContext
 jq -n --arg ctx "$CONTEXT" '{
   "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
     "additionalContext": $ctx
   }
 }'
