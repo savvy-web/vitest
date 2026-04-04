@@ -107,6 +107,13 @@ All commits require:
 1. Conventional commit format (feat, fix, chore, etc.)
 2. DCO signoff: `Signed-off-by: Name <email>`
 
+### Shell Scripts
+
+Shell scripts (`.sh`) are stored without executable permission (644).
+Lint-staged enforces `chmod -x` on all `*.sh` files. Hook scripts are
+invoked via `bash "path/to/script.sh"` in `hooks.json` — never rely
+on the executable bit.
+
 ### Publishing
 
 Packages publish to both GitHub Packages and npm with provenance.
