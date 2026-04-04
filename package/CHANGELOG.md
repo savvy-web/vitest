@@ -1,5 +1,11 @@
 # @savvy-web/pnpm-module-template
 
+## 1.2.2
+
+### Bug Fixes
+
+* [`6e38b54`](https://github.com/savvy-web/vitest/commit/6e38b54bbb7a1bfc89649d9f1575cf362176643a) Fix SessionStart hook JSON validation by adding missing hookEventName field, consuming stdin to prevent broken pipe errors, and converting additionalContext from markdown to XML tags
+
 ## 1.2.1
 
 ### Bug Fixes
