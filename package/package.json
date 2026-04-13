@@ -29,14 +29,14 @@
 		"types:check": "tsgo --noEmit"
 	},
 	"dependencies": {
-		"workspace-tools": "0.41.0"
+		"workspace-tools": "0.41.4"
 	},
 	"devDependencies": {
-		"@microsoft/api-extractor": "^7.57.7",
-		"@rslib/core": "^0.20.1",
+		"@microsoft/api-extractor": "^7.58.2",
+		"@rslib/core": "^0.21.0",
 		"@savvy-web/rslib-builder": "^0.19.1",
-		"@vitest/coverage-v8": "^4.1.2",
-		"vitest": "^4.1.2",
+		"@vitest/coverage-v8": "^4.1.4",
+		"vitest": "^4.1.4",
 		"vitest-agent-reporter": "^1.2.1"
 	},
 	"peerDependencies": {
