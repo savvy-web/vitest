@@ -1,5 +1,11 @@
 # @savvy-web/pnpm-module-template
 
+## 1.3.0
+
+### Other
+
+* [`e9b058b`](https://github.com/savvy-web/vitest/commit/e9b058b989787120fb66f5548201daa89f1a604e) Switch to catalog dependency versioning
+
 ## 1.2.2
 
 ### Bug Fixes
