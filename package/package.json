@@ -29,11 +29,10 @@
 		"types:check": "tsgo --noEmit"
 	},
 	"dependencies": {
-		"workspace-tools": "0.41.0"
+		"workspace-tools": "0.41.4"
 	},
 	"devDependencies": {
-		"@microsoft/api-extractor": "^7.57.7",
-		"@rslib/core": "^0.20.1",
+		"@rslib/core": "^0.21.1",
 		"@savvy-web/rslib-builder": "^0.20.0",
 		"@vitest/coverage-v8": "^4.1.4",
 		"vitest": "^4.1.4",
