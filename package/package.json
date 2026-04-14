@@ -34,9 +34,9 @@
 	"devDependencies": {
 		"@microsoft/api-extractor": "^7.57.7",
 		"@rslib/core": "^0.20.1",
-		"@savvy-web/rslib-builder": "^0.19.1",
-		"@vitest/coverage-v8": "^4.1.2",
-		"vitest": "^4.1.2",
+		"@savvy-web/rslib-builder": "^0.20.0",
+		"@vitest/coverage-v8": "^4.1.4",
+		"vitest": "^4.1.4",
 		"vitest-agent-reporter": "^1.2.1"
 	},
 	"peerDependencies": {
