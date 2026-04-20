@@ -32,7 +32,7 @@
 		"workspace-tools": "0.41.4"
 	},
 	"devDependencies": {
-		"@rslib/core": "^0.21.1",
+		"@rslib/core": "^0.21.2",
 		"@savvy-web/rslib-builder": "^0.20.1",
 		"@vitest/coverage-v8": "^4.1.4",
 		"vitest": "^4.1.4",
