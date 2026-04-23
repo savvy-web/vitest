@@ -71,7 +71,7 @@ importers:
         version: 0.41.4
     devDependencies:
       '@rslib/core':
-        specifier: ^0.21.1
+        specifier: ^0.21.3
         version: 0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260423.1)(typescript@6.0.3)
       '@savvy-web/rslib-builder':
         specifier: ^0.20.2
