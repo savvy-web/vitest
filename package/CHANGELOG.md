@@ -1,5 +1,17 @@
 # @savvy-web/pnpm-module-template
 
+## 1.3.1
+
+### Features
+
+* [`e36722e`](https://github.com/savvy-web/vitest/commit/e36722ea46576b6d1d5e9021f914eed939264134) Upgrades to smarter version vitest-agent-reporter
+
+### Dependencies
+
+* | [`e36722e`](https://github.com/savvy-web/vitest/commit/e36722ea46576b6d1d5e9021f914eed939264134) | Dependency     | Type    | Action | From   | To |
+  | :----------------------------------------------------------------------------------------------- | :------------- | :------ | :----- | :----- | -- |
+  | vitest-agent-reporter                                                                            | peerDependency | updated | ^1.2.1 | ^1.3.0 |    |
+
 ## 1.3.0
 
 ### Other
