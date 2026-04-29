@@ -29,11 +29,11 @@
 		"types:check": "tsgo --noEmit"
 	},
 	"dependencies": {
-		"workspace-tools": "0.41.4"
+		"workspace-tools": "0.41.6"
 	},
 	"devDependencies": {
 		"@rslib/core": "^0.21.3",
-		"@savvy-web/rslib-builder": "^0.20.2",
+		"@savvy-web/rslib-builder": "^0.20.3",
 		"@vitest/coverage-v8": "^4.1.5",
 		"vitest": "^4.1.5",
 		"vitest-agent-reporter": "^1.3.0"
