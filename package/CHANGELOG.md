@@ -1,5 +1,15 @@
 # @savvy-web/pnpm-module-template
 
+## 1.3.2
+
+### Dependencies
+
+* | [`12419cf`](https://github.com/savvy-web/vitest/commit/12419cf69137edc0dfd4c2e65924865cd9d5b9e1) | Dependency     | Type    | Action  | From    | To |
+  | :----------------------------------------------------------------------------------------------- | :------------- | :------ | :------ | :------ | -- |
+  | vitest-agent-reporter                                                                            | peerDependency | updated | ^1.3.0  | ^1.3.1  |    |
+  | @savvy-web/rslib-builder                                                                         | devDependency  | updated | ^0.20.2 | ^0.20.3 |    |
+  | vitest-agent-reporter                                                                            | devDependency  | updated | ^1.3.0  | ^1.3.1  |    |
+
 ## 1.3.1
 
 ### Features
