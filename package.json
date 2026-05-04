@@ -36,7 +36,7 @@
 	},
 	"devDependencies": {
 		"@savvy-web/changesets": "^0.8.0",
-		"@savvy-web/commitlint": "^0.7.0",
+		"@savvy-web/commitlint": "^0.7.1",
 		"@savvy-web/lint-staged": "^1.0.0",
 		"@savvy-web/rslib-builder": "^0.20.3",
 		"@savvy-web/vitest": "workspace:*",
