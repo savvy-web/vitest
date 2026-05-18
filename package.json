@@ -35,9 +35,9 @@
 		"typecheck": "turbo run types:check --log-prefix=none --log-order=grouped"
 	},
 	"devDependencies": {
-		"@savvy-web/changesets": "^0.9.0",
+		"@savvy-web/changesets": "^0.10.0",
 		"@savvy-web/commitlint": "^0.9.0",
-		"@savvy-web/lint-staged": "^1.0.0",
+		"@savvy-web/lint-staged": "^1.0.1",
 		"@savvy-web/rslib-builder": "^0.20.3",
 		"@savvy-web/vitest": "workspace:*",
 		"@vitest/coverage-v8": "^4.1.6",

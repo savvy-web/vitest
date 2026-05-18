@@ -29,10 +29,10 @@
 		"types:check": "tsgo --noEmit"
 	},
 	"dependencies": {
-		"workspace-tools": "0.41.4"
+		"workspace-tools": "0.41.7"
 	},
 	"devDependencies": {
-		"@rslib/core": "^0.21.3",
+		"@rslib/core": "^0.21.5",
 		"@savvy-web/rslib-builder": "^0.20.3",
 		"@vitest/coverage-v8": "^4.1.6",
 		"vitest": "^4.1.6",
