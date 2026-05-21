@@ -4,13 +4,17 @@
 		"@savvy-web/changesets/changelog",
 		{
 			"repo": "savvy-web/vitest",
-			"versionFiles": [
-				{
-					"glob": "plugin/.claude-plugin/plugin.json",
-					"paths": ["$.version"],
-					"package": "@savvy-web/vitest"
+			"packages": {
+				"@savvy-web/vitest": {
+					"additionalScopes": ["plugin/**"],
+					"versionFiles": [
+						{
+							"glob": "plugin/.claude-plugin/plugin.json",
+							"paths": ["$.version"]
+						}
+					]
 				}
-			]
+			}
 		}
 	],
 	"commit": false,
