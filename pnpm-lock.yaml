@@ -37,11 +37,11 @@ importers:
         specifier: ^0.9.0
         version: 0.9.0(@commitlint/cli@20.5.0(@types/node@25.6.0)(conventional-commits-parser@6.4.0)(typescript@6.0.3))(@commitlint/config-conventional@20.5.0)(@effect/experimental@0.60.0(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/typeclass@0.40.0(effect@3.21.2))(@effect/workflow@0.18.1(@effect/experimental@0.60.0(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.96.1(effect@3.21.2))(@effect/rpc@0.75.1(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(commitizen@4.3.1(@types/node@25.6.0)(typescript@6.0.3))(husky@9.1.7)
       '@savvy-web/lint-staged':
-        specifier: ^1.0.1
-        version: 1.0.1(4c9ec8649b4064329ef8e34ff431b60d)
+        specifier: ^1.1.0
+        version: 1.1.0(4c9ec8649b4064329ef8e34ff431b60d)
       '@savvy-web/rslib-builder':
-        specifier: ^0.20.4
-        version: 0.20.4(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)
+        specifier: ^0.20.5
+        version: 0.20.5(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)
       '@savvy-web/vitest':
         specifier: workspace:*
         version: link:package/dist/dev
@@ -74,8 +74,8 @@ importers:
         specifier: ^0.21.3
         version: 0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3)
       '@savvy-web/rslib-builder':
-        specifier: ^0.20.4
-        version: 0.20.4(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)
+        specifier: ^0.20.5
+        version: 0.20.5(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)
       '@vitest/coverage-v8':
         specifier: ^4.1.7
         version: 4.1.7(vitest@4.1.7)
@@ -1142,26 +1142,26 @@ packages:
       commitizen: ^4.3.0
       husky: ^9.1.0
 
-  '@savvy-web/lint-staged@1.0.1':
-    resolution: {integrity: sha512-JELWQGKusQcgIMYg7izh6oFr/4tGbFZjHRgMIA4MRJCUTphxsmX/9tlLB1zOxSatxHaQqu4Cir7MEYzuRHkOfQ==}
+  '@savvy-web/lint-staged@1.1.0':
+    resolution: {integrity: sha512-Mgzd1refMWa6i2p7HhJf4ZXLhfDz6pfRQfDzK8hGKenvP8KegMkrEK5l9Pb70/vYc3I/My/Mwm+xlvWCMkTQlg==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
       '@biomejs/biome': 2.4.15
       '@types/node': ^25.6.0
       '@typescript/native-preview': ^7.0.0-dev.20260513.1
-      husky: ^9.1.0
-      lint-staged: ^16.4.0
-      markdownlint-cli2: ^0.22.0
+      husky: ^9.1.7
+      lint-staged: ^17.0.5
+      markdownlint-cli2: ^0.22.1
       markdownlint-cli2-formatter-codequality: ^0.0.7
-      turbo: ^2.9.0
+      turbo: ^2.9.14
       typescript: ^6.0.0
     peerDependenciesMeta:
       '@biomejs/biome':
         optional: true
 
-  '@savvy-web/rslib-builder@0.20.4':
-    resolution: {integrity: sha512-6SreJCG2lYyfzfYctbRyJLSvtdEhvlcAvLsb1GVD6whQOfEbfJwZEs9VC1QPLCzBHbvjweYjYqp3xJ18gPUk8A==}
+  '@savvy-web/rslib-builder@0.20.5':
+    resolution: {integrity: sha512-rR+ezNPNlDtnMV1J5AHehRS18JbMtcLFFW7fqJM7j9F37YUjmFxn+WvTyMKumB/bOE+A7tDfOEfrUmeGqOD81A==}
     peerDependencies:
       '@rsbuild/plugin-react': ^2.0.0
       '@rslib/core': ^0.21.0
@@ -1331,12 +1331,6 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4 <6.0.0'
 
-  '@typescript-eslint/tsconfig-utils@8.59.1':
-    resolution: {integrity: sha512-/0nEyPbX7gRsk0Uwfe4ALwwgxuA66d/l2mhRDNlAvaj4U3juhUtJNq0DsY8M2AYwwb9rEq2hrC3IcIcEt++iJA==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-    peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
-
   '@typescript-eslint/tsconfig-utils@8.59.4':
     resolution: {integrity: sha512-DLCpnKgD4alVxTBSKulK+gU1KCqOgUXfDRDXh2mZgzokQKa/70ax93I2uVO3m/LLvIAtWZIFoiifudmIqAxpMA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -1345,10 +1339,6 @@ packages:
 
   '@typescript-eslint/types@8.56.1':
     resolution: {integrity: sha512-dbMkdIUkIkchgGDIv7KLUpa0Mda4IYjo4IAMJUZ+3xNoUXxMsk9YtKpTHSChRS85o+H9ftm51gsK1dZReY9CVw==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  '@typescript-eslint/types@8.59.1':
-    resolution: {integrity: sha512-ZDCjgccSdYPw5Bxh+my4Z0lJU96ZDN7jbBzvmEn0FZx3RtU1C7VWl6NbDx94bwY3V5YsgwRzJPOgeY2Q/nLG8A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@typescript-eslint/types@8.59.4':
@@ -5292,7 +5282,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@savvy-web/lint-staged@1.0.1(4c9ec8649b4064329ef8e34ff431b60d)':
+  '@savvy-web/lint-staged@1.1.0(4c9ec8649b4064329ef8e34ff431b60d)':
     dependencies:
       '@effect/cli': 0.75.1(@effect/platform@0.96.1(effect@3.21.2))(@effect/printer-ansi@0.49.0(@effect/typeclass@0.40.0(effect@3.21.2))(effect@3.21.2))(@effect/printer@0.49.0(@effect/typeclass@0.40.0(effect@3.21.2))(effect@3.21.2))(effect@3.21.2)
       '@effect/platform': 0.96.1(effect@3.21.2)
@@ -5322,7 +5312,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@savvy-web/rslib-builder@0.20.4(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)':
+  '@savvy-web/rslib-builder@0.20.5(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)':
     dependencies:
       '@microsoft/api-extractor': 7.58.7(@types/node@25.6.0)
       '@microsoft/tsdoc': 0.16.0
@@ -5464,8 +5454,8 @@ snapshots:
 
   '@typescript-eslint/project-service@8.56.1(typescript@6.0.3)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.59.1(typescript@6.0.3)
-      '@typescript-eslint/types': 8.59.1
+      '@typescript-eslint/tsconfig-utils': 8.59.4(typescript@6.0.3)
+      '@typescript-eslint/types': 8.59.4
       debug: 4.4.3
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -5494,17 +5484,11 @@ snapshots:
     dependencies:
       typescript: 6.0.3
 
-  '@typescript-eslint/tsconfig-utils@8.59.1(typescript@6.0.3)':
-    dependencies:
-      typescript: 6.0.3
-
   '@typescript-eslint/tsconfig-utils@8.59.4(typescript@6.0.3)':
     dependencies:
       typescript: 6.0.3
 
   '@typescript-eslint/types@8.56.1': {}
-
-  '@typescript-eslint/types@8.59.1': {}
 
   '@typescript-eslint/types@8.59.4': {}
 
@@ -6955,7 +6939,7 @@ snapshots:
       picomatch: 4.0.4
       string-argv: 0.3.2
       tinyexec: 1.1.1
-      yaml: 2.8.3
+      yaml: 2.9.0
 
   listr2@9.0.5:
     dependencies:
