@@ -42,9 +42,9 @@ jobs:
         uses: savvy-web/workflow-runtime-action@main
       - name: Update Config Dependencies
         id: update
-        uses: savvy-web/pnpm-config-dependency-action@main
+        uses: savvy-web/pnpm-config-dependency-action@feat/github-efffect-2-0-0
         with:
-          app-id: ${{ secrets.APP_ID }}
+          app-client-id: ${{ vars.APP_CLIENT_ID }}
           app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
           branch: ${{ inputs.branch || 'pnpm/config-deps' }}
           dry-run: ${{ inputs.dry-run || false }}
@@ -65,4 +65,5 @@ jobs:
             pnpm savvy-commit init
             pnpm savvy-lint init
             pnpm savvy-changesets init
+            pnpm build 2>/dev/null || true
             pnpm lint:fix 2>/dev/null || true
