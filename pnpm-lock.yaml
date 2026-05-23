@@ -24,7 +24,7 @@ overrides:
   smol-toml: '>=1.6.1'
   tmp: ^0.2.4
 
-pnpmfileChecksum: sha256-qvdCCa72IufQV7GlA20Wd6Leo7yHiU/ZQZciNTWkhM4=
+pnpmfileChecksum: sha256-j7znAYbhzZYspyktgYO/HLTxIJEXL9UtQHx5IyS1XF0=
 
 importers:
 
@@ -40,8 +40,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0(4c9ec8649b4064329ef8e34ff431b60d)
       '@savvy-web/rslib-builder':
-        specifier: ^0.20.5
-        version: 0.20.5(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)
+        specifier: ^0.20.6
+        version: 0.20.6(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)
       '@savvy-web/vitest':
         specifier: workspace:*
         version: link:package/dist/dev
@@ -74,8 +74,8 @@ importers:
         specifier: ^0.21.3
         version: 0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3)
       '@savvy-web/rslib-builder':
-        specifier: ^0.20.5
-        version: 0.20.5(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)
+        specifier: ^0.20.6
+        version: 0.20.6(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)
       '@vitest/coverage-v8':
         specifier: ^4.1.7
         version: 4.1.7(vitest@4.1.7)
@@ -1160,8 +1160,8 @@ packages:
       '@biomejs/biome':
         optional: true
 
-  '@savvy-web/rslib-builder@0.20.5':
-    resolution: {integrity: sha512-rR+ezNPNlDtnMV1J5AHehRS18JbMtcLFFW7fqJM7j9F37YUjmFxn+WvTyMKumB/bOE+A7tDfOEfrUmeGqOD81A==}
+  '@savvy-web/rslib-builder@0.20.6':
+    resolution: {integrity: sha512-TfsRzraDRp6zk75Vlf7DXPMTOIG3ZszQWULq/cqi31xvzNK4CZtUnzKIIc4QtYMt/f1AM9O1iIW53LZRSetUYg==}
     peerDependencies:
       '@rsbuild/plugin-react': ^2.0.0
       '@rslib/core': ^0.21.0
@@ -5312,7 +5312,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@savvy-web/rslib-builder@0.20.5(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)':
+  '@savvy-web/rslib-builder@0.20.6(@pnpm/logger@1001.0.1)(@rslib/core@0.21.3(@microsoft/api-extractor@7.58.7(@types/node@25.6.0))(@typescript/native-preview@7.0.0-dev.20260513.1)(typescript@6.0.3))(@types/node@25.6.0)(@typescript/native-preview@7.0.0-dev.20260513.1)(jiti@2.6.1)(typescript@6.0.3)':
     dependencies:
       '@microsoft/api-extractor': 7.58.7(@types/node@25.6.0)
       '@microsoft/tsdoc': 0.16.0
