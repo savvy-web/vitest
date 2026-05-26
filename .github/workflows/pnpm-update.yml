@@ -51,10 +51,12 @@ jobs:
           log-level: ${{ inputs.log-level || 'info' }}
           changesets: true
           auto-merge: "squash"
+          upgrade-runtime-node: "^26.0.0"
           config-dependencies: |
             @savvy-web/pnpm-plugin-silk
           dependencies: |
             @savvy-web/*
+            @rslib/core
             @vitest/coverage-v8
             vitest-agent-reporter
             vitest
