@@ -37,8 +37,8 @@
 	"devDependencies": {
 		"@savvy-web/changesets": "^0.10.0",
 		"@savvy-web/commitlint": "^0.10.0",
-		"@savvy-web/lint-staged": "^1.2.0",
-		"@savvy-web/rslib-builder": "^0.20.9",
+		"@savvy-web/lint-staged": "^1.2.1",
+		"@savvy-web/rslib-builder": "^0.20.10",
 		"@savvy-web/vitest": "workspace:*",
 		"@vitest/coverage-v8": "^4.1.7",
 		"vitest": "^4.1.7",
