@@ -1,5 +1,11 @@
 # @savvy-web/pnpm-module-template
 
+## 1.3.3
+
+### Other
+
+* [`d2f3f0f`](https://github.com/savvy-web/vitest/commit/d2f3f0f547fbc14f53353503fac3875631f2a26a) Release to fix stale security warnings
+
 ## 1.3.2
 
 ### Dependencies
