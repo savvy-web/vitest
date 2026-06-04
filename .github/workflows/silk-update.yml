@@ -66,8 +66,5 @@ jobs:
             vitest
           peer-lock: vitest-agent-reporter
           run: |
-            pnpm savvy-commit init
-            pnpm savvy-lint init
-            pnpm savvy-changesets init
-            pnpm build 2>/dev/null || true
+            pnpm savvy init
             pnpm lint:fix 2>/dev/null || true
