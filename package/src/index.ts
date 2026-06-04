@@ -566,7 +566,6 @@ export class VitestProject {
  *
  * @public
  */
-// biome-ignore lint/complexity/noStaticOnlyClass: Intentional namespace pattern for related functionality with shared cached state
 export class VitestConfig {
 	/** Default glob patterns excluded from coverage reporting. */
 	private static readonly DEFAULT_COVERAGE_EXCLUDE = [
