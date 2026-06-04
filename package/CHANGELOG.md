@@ -1,5 +1,11 @@
 # @savvy-web/pnpm-module-template
 
+## 1.4.0
+
+### Other
+
+* [`1ff4d11`](https://github.com/savvy-web/vitest/commit/1ff4d11c7339609cbc8c3e0498a136cd77a9090c) Upgrades to unified `@savvy-web/silk` system
+
 ## 1.3.3
 
 ### Other
