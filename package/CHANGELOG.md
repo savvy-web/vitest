@@ -1,5 +1,11 @@
 # @savvy-web/pnpm-module-template
 
+## 1.5.0
+
+### Build System
+
+* [`ede0c04`](https://github.com/savvy-web/vitest/commit/ede0c04f39f513376eb9e2003a37692af57c0e3e) Switch to @savvy-web/bundler for bundling
+
 ## 1.4.0
 
 ### Other
