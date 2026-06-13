@@ -33,7 +33,7 @@
 		"workspace-tools": "0.41.7"
 	},
 	"devDependencies": {
-		"@savvy-web/bundler": "^0.4.1",
+		"@savvy-web/bundler": "^0.4.2",
 		"@vitest/coverage-v8": "^4.1.8",
 		"vitest": "^4.1.8",
 		"vitest-agent-reporter": "^1.3.1"
