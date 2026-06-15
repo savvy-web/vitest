@@ -1,5 +1,15 @@
 # @savvy-web/pnpm-module-template
 
+## 1.5.1
+
+### Dependencies
+
+* | [`3bcdf17`](https://github.com/savvy-web/vitest/commit/3bcdf17f4fbbcdeb8edcec8a38f017503c1cfee3) | Dependency    | Type    | Action               | From                 | To |
+  | :----------------------------------------------------------------------------------------------- | :------------ | :------ | :------------------- | :------------------- | -- |
+  | @types/node                                                                                      | dependency    | updated | 25.9.2               | 25.9.3               |    |
+  | @typescript/native-preview                                                                       | dependency    | updated | 7.0.0-dev.20260610.1 | 7.0.0-dev.20260614.1 |    |
+  | @savvy-web/bundler                                                                               | devDependency | updated | ^0.4.2               | ^0.5.0               |    |
+
 ## 1.5.0
 
 ### Build System
