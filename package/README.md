@@ -1,5 +1,10 @@
 # @savvy-web/vitest
 
+> **This package is deprecated and no longer maintained.**
+> Migrate to [`@vitest-agent/plugin`](https://www.npmjs.com/package/@vitest-agent/plugin) for similar functionality.
+> Sources live in the [vitest-agent monorepo](https://github.com/spencerbeggs/vitest-agent).
+> No further releases, fixes or security patches will be published here.
+
 [![npm version](https://img.shields.io/npm/v/@savvy-web/vitest)](https://www.npmjs.com/package/@savvy-web/vitest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 

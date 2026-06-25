@@ -297,7 +297,7 @@ export class VitestProject {
 	}
 
 	/**
-	 * Coverage exclusion patterns accumulated via {@link addCoverageExclude}.
+	 * Coverage exclusion patterns accumulated via {@link VitestProject.addCoverageExclude}.
 	 *
 	 * @remarks
 	 * These patterns are not embedded in the inline project config but are
@@ -322,8 +322,8 @@ export class VitestProject {
 	 *
 	 * @remarks
 	 * The clone has its own config object so mutations via
-	 * {@link override}, {@link addInclude}, {@link addExclude}, and
-	 * {@link addCoverageExclude} do not affect the original.
+	 * {@link VitestProject.override}, {@link VitestProject.addInclude}, {@link VitestProject.addExclude}, and
+	 * {@link VitestProject.addCoverageExclude} do not affect the original.
 	 *
 	 * @returns A new {@link VitestProject} with the same configuration
 	 */
@@ -398,7 +398,7 @@ export class VitestProject {
 	 * Appends glob patterns to the coverage exclusion list.
 	 *
 	 * @remarks
-	 * These patterns are exposed via {@link coverageExcludes} for the
+	 * These patterns are exposed via {@link VitestProject.coverageExcludes} for the
 	 * workspace-level coverage configuration to consume.
 	 *
 	 * @param patterns - Glob patterns to exclude from coverage
