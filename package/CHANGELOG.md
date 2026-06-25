@@ -1,5 +1,13 @@
 # @savvy-web/pnpm-module-template
 
+## 1.6.0
+
+### Breaking Changes
+
+* [`c48e9a6`](https://github.com/savvy-web/vitest/commit/c48e9a6670bfef6393a3156e5be29aea6f98f235) ### Package Deprecated
+
+Migrate to [`@vitest-agent/plugin`](https://www.npmjs.com/package/@vitest-agent/plugin), which supercedes this package.
+
 ## 1.5.1
 
 ### Dependencies
