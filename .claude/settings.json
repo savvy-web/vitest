@@ -12,7 +12,6 @@
 	"enableAllProjectMcpServers": true,
 	"enabledPlugins": {
 		"design-docs@spencerbeggs": true,
-		"vitest-agent-reporter@spencerbeggs": true,
 		"silk@savvy-web-systems": true
 	},
 	"plansDirectory": ".claude/plans"

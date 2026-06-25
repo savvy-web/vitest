@@ -24,26 +24,25 @@
 	},
 	"scripts": {
 		"build:dev": "node savvy.build.ts --target dev",
-		"build:meta": "node savvy.build.ts --target meta",
 		"build:prod": "node savvy.build.ts --target prod",
-		"preinstall": "turbo run build:dev",
+		"prepare": "turbo run build:dev",
 		"types:check": "tsgo --noEmit"
 	},
 	"dependencies": {
 		"workspace-tools": "0.41.7"
 	},
 	"devDependencies": {
-		"@savvy-web/bundler": "^0.5.0",
-		"@vitest/coverage-v8": "^4.1.8",
-		"vitest": "^4.1.8",
+		"@savvy-web/bundler": "^0.11.0",
+		"@vitest/coverage-v8": "catalog:silk",
+		"vitest": "catalog:silk",
 		"vitest-agent-reporter": "^1.3.1"
 	},
 	"peerDependencies": {
 		"@types/node": "catalog:silkPeers",
 		"@typescript/native-preview": "catalog:silkPeers",
-		"@vitest/coverage-v8": "^4.1.0",
+		"@vitest/coverage-v8": "catalog:silkPeers",
 		"typescript": "catalog:silkPeers",
-		"vitest": "^4.1.0",
+		"vitest": "catalog:silkPeers",
 		"vitest-agent-reporter": "^1.3.1"
 	},
 	"peerDependenciesMeta": {
@@ -56,21 +55,6 @@
 		"vitest-agent-reporter": {
 			"optional": false
 		}
-	},
-	"packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
-	"devEngines": {
-		"packageManager": {
-			"name": "pnpm",
-			"version": "10.33.0",
-			"onFail": "ignore"
-		},
-		"runtime": [
-			{
-				"name": "node",
-				"version": "24.11.0",
-				"onFail": "ignore"
-			}
-		]
 	},
 	"publishConfig": {
 		"access": "public",
